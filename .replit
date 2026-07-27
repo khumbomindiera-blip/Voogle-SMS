@@ -1,11 +1,11 @@
 modules = ["nodejs-24", "python-3.11"]
 
 [deployment]
-router = "application"
-deploymentTarget = "autoscale"
+deploymentTarget = "vm"
+run = ["python", "voogle/app.py"]
 
 [deployment.postBuild]
-args = ["pnpm", "store", "prune"]
+args = ["pip", "install", "-r", "voogle/requirements.txt"]
 env = { "CI" = "true" }
 
 [workflows]
