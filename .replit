@@ -1,7 +1,7 @@
 modules = ["nodejs-24", "python-3.11"]
 
 [deployment]
-deploymentTarget = "vm"
+deploymentTarget = "cloudrun"
 run = ["python", "voogle/app.py"]
 
 [deployment.postBuild]
