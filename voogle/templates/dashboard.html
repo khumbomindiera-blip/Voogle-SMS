@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Voogle Admin Dashboard</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1a1d2e 0%, #16213e 100%);
+      border-bottom: 1px solid #2d3748;
+      padding: 20px 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logo {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -1px;
+    }
+    .logo span.v { color: #4285f4; }
+    .logo span.o1 { color: #ea4335; }
+    .logo span.o2 { color: #fbbc04; }
+    .logo span.g { color: #4285f4; }
+    .logo span.l { color: #34a853; }
+    .logo span.e { color: #ea4335; }
+
+    .subtitle {
+      color: #718096;
+      font-size: 13px;
+      margin-left: auto;
+    }
+
+    .stats-bar {
+      background: #1a1d2e;
+      border-bottom: 1px solid #2d3748;
+      padding: 14px 32px;
+      display: flex;
+      gap: 32px;
+      align-items: center;
+    }
+
+    .stat {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .stat-label { font-size: 11px; color: #718096; text-transform: uppercase; letter-spacing: 0.05em; }
+    .stat-value { font-size: 22px; font-weight: 700; color: #e2e8f0; }
+
+    .container {
+      padding: 28px 32px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .search-bar {
+      margin-bottom: 20px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .search-bar input {
+      flex: 1;
+      background: #1a1d2e;
+      border: 1px solid #2d3748;
+      border-radius: 8px;
+      padding: 10px 16px;
+      color: #e2e8f0;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-bar input:focus { border-color: #4285f4; }
+    .search-bar input::placeholder { color: #4a5568; }
+
+    .refresh-btn {
+      background: #4285f4;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .refresh-btn:hover { background: #3574e3; }
+
+    .table-wrap {
+      background: #1a1d2e;
+      border: 1px solid #2d3748;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead {
+      background: #16213e;
+    }
+
+    th {
+      text-align: left;
+      padding: 14px 18px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #718096;
+      border-bottom: 1px solid #2d3748;
+    }
+
+    td {
+      padding: 14px 18px;
+      font-size: 14px;
+      border-bottom: 1px solid #1e2333;
+      vertical-align: top;
+      line-height: 1.5;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #1e2740; }
+
+    .phone {
+      font-family: "SF Mono", "Courier New", monospace;
+      font-size: 13px;
+      color: #63b3ed;
+      white-space: nowrap;
+    }
+
+    .query-text {
+      color: #e2e8f0;
+      max-width: 300px;
+    }
+
+    .response-text {
+      color: #a0aec0;
+      max-width: 420px;
+    }
+
+    .timestamp {
+      font-size: 12px;
+      color: #4a5568;
+      white-space: nowrap;
+      font-family: "SF Mono", "Courier New", monospace;
+    }
+
+    .badge {
+      display: inline-block;
+      background: #1c3a6b;
+      color: #63b3ed;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-bottom: 4px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 64px 32px;
+      color: #4a5568;
+    }
+    .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+    .empty-state p { font-size: 15px; }
+
+    .no-rows { display: none; }
+
+    @media (max-width: 900px) {
+      .stats-bar { flex-wrap: wrap; gap: 16px; }
+      .container { padding: 16px; }
+      header { padding: 16px; }
+      .query-text, .response-text { max-width: 180px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <span class="v">V</span><span class="o1">o</span><span class="o2">o</span><span class="g">g</span><span class="l">l</span><span class="e">e</span>
+  </div>
+  <div class="subtitle">SMS · Gemini · Intelligence</div>
+</header>
+
+<div class="stats-bar">
+  <div class="stat">
+    <span class="stat-label">Total Queries</span>
+    <span class="stat-value" id="total-count">{{ queries | length }}</span>
+  </div>
+  <div class="stat">
+    <span class="stat-label">Unique Numbers</span>
+    <span class="stat-value" id="unique-count">{{ queries | map(attribute='phone_number') | list | unique | list | length }}</span>
+  </div>
+  {% if queries %}
+  <div class="stat">
+    <span class="stat-label">Latest Query</span>
+    <span class="stat-value" style="font-size:14px;color:#718096;">{{ queries[0].timestamp }}</span>
+  </div>
+  {% endif %}
+</div>
+
+<div class="container">
+  <div class="search-bar">
+    <input type="text" id="search" placeholder="Search by phone number or message…" oninput="filterTable()" />
+    <button class="refresh-btn" onclick="location.reload()">↻ Refresh</button>
+  </div>
+
+  <div class="table-wrap">
+    {% if queries %}
+    <table id="queries-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Phone Number</th>
+          <th>User Query</th>
+          <th>Gemini Response</th>
+          <th>Date &amp; Time</th>
+        </tr>
+      </thead>
+      <tbody id="table-body">
+        {% for q in queries %}
+        <tr>
+          <td style="color:#4a5568;font-size:13px;">{{ q.id }}</td>
+          <td><span class="phone">{{ q.phone_number }}</span></td>
+          <td class="query-text">{{ q.user_query }}</td>
+          <td class="response-text">{{ q.gemini_response }}</td>
+          <td class="timestamp">{{ q.timestamp }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <tr id="no-rows" class="no-rows">
+      <td colspan="5" style="text-align:center;padding:32px;color:#4a5568;">No matching records found.</td>
+    </tr>
+    {% else %}
+    <div class="empty-state">
+      <div class="icon">📭</div>
+      <p>No SMS queries yet. Send a message to your Africa's Talking number to get started.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+  function filterTable() {
+    const val = document.getElementById("search").value.toLowerCase();
+    const rows = document.querySelectorAll("#table-body tr");
+    let visible = 0;
+    rows.forEach(row => {
+      const text = row.innerText.toLowerCase();
+      const show = text.includes(val);
+      row.style.display = show ? "" : "none";
+      if (show) visible++;
+    });
+    const noRows = document.getElementById("no-rows");
+    if (noRows) noRows.style.display = visible === 0 ? "table-row" : "none";
+  }
+</script>
+
+</body>
+</html>
