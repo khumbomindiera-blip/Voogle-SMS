@@ -39,6 +39,9 @@ paths = ["/"]
 [services.development]
 run = "cd voogle && python app.py"
 
+[services.production.build]
+args = ["pip", "install", "-r", "voogle/requirements.txt"]
+
 [services.production.run]
 args = ["python", "voogle/app.py"]
 
