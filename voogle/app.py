@@ -1,26 +1,29 @@
 import os
 import datetime
 from flask import Flask, request, render_template, jsonify
-import google.generativeai as genai
-from database import init_db, save_query, get_all_queries
+from google import genai
 
 app = Flask(__name__)
 
-# Configure Gemini
+# Configure Gemini client
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
-if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
+client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 
 # Initialize database on startup
+from database import init_db, save_query, get_all_queries
 with app.app_context():
     init_db()
 
 
 def get_gemini_response(message: str) -> str:
     """Send a message to Gemini and return the text response."""
+    if not client:
+        return "Error: GEMINI_API_KEY is not configured."
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
-        response = model.generate_content(message)
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=message,
+        )
         return response.text.strip()
     except Exception as e:
         return f"Error contacting Gemini: {str(e)}"

@@ -1,45 +1,61 @@
-# [Project name]
+# Voogle
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+An SMS-to-AI service that receives text messages via Africa's Talking, answers them using Google Gemini, and logs everything to an admin dashboard.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- `cd voogle && python app.py` — run the Flask app (port 5000)
+- Workflow: **Voogle Flask App** — managed by Replit, auto-starts on project open
 
 ## Stack
 
-- pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- Python 3.11 + Flask 3
+- Google Gemini (`google-genai` SDK, model: `gemini-2.0-flash`)
+- SQLite (file: `voogle/voogle.db`)
+- Africa's Talking SMS webhook
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+```
+voogle/
+  app.py          ← Flask routes (/, /sms, /admin, /health)
+  database.py     ← SQLite init, insert, fetch helpers
+  requirements.txt
+  templates/
+    dashboard.html  ← Admin dashboard UI
+  voogle.db         ← SQLite database (created on first run, git-ignored)
+```
 
-## Architecture decisions
+## Endpoints
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+| Method | Path | Purpose |
+|--------|------|---------|
+| POST | `/sms` | Africa's Talking webhook — receives SMS, calls Gemini, returns plain text |
+| GET | `/admin` | Admin dashboard (HTML) |
+| GET | `/admin/api/queries` | All records as JSON |
+| GET | `/health` | Health check |
 
-## Product
+## Secrets required
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+- `GEMINI_API_KEY` — Google AI Studio key (already set via Replit Secrets)
+
+## Connecting Africa's Talking
+
+See the **Pointers** section below.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+_Populate as you build._
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Africa's Talking sends POST form data; the `/sms` route reads `request.form.get("from")` and `request.form.get("text")`.
+- AT expects a plain-text HTTP 200 response — Flask returns the Gemini reply directly.
+- The SQLite database is created automatically on first startup.
+- `google-generativeai` (old SDK) is deprecated — this project uses `google-genai` (new SDK).
 
 ## Pointers
 
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+- Africa's Talking dashboard: https://account.africastalking.com
+- Google AI Studio (get API key): https://aistudio.google.com/app/apikey
+- See the `pnpm-workspace` skill for the broader monorepo structure
