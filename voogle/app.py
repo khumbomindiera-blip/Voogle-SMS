@@ -72,6 +72,18 @@ def api_queries():
     return jsonify(queries)
 
 
+@app.route("/debug")
+def debug():
+    """Temporary debug endpoint — shows key presence and model config, never the full key."""
+    key_exists = GEMINI_API_KEY is not None
+    key_preview = (GEMINI_API_KEY[:6] + "...") if key_exists else None
+    return jsonify({
+        "gemini_api_key_exists": key_exists,
+        "gemini_api_key_preview": key_preview,
+        "model": "gemini-2.0-flash",
+    })
+
+
 @app.route("/health")
 def health():
     return {"status": "ok", "app": "Voogle"}, 200
