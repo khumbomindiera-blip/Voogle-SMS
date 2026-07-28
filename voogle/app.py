@@ -21,7 +21,7 @@ def get_gemini_response(message: str) -> str:
         return "Error: GEMINI_API_KEY is not configured."
     try:
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-2.5-flash",
             contents=message,
         )
         return response.text.strip()
@@ -80,7 +80,7 @@ def debug():
     return jsonify({
         "gemini_api_key_exists": key_exists,
         "gemini_api_key_preview": key_preview,
-        "model": "gemini-2.0-flash",
+        "model": "gemini-2.5-flash",
     })
 
 
