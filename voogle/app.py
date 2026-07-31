@@ -1,23 +1,43 @@
 import os
+import logging
 import datetime
 from flask import Flask, request, render_template, jsonify
 from groq import Groq
 from duckduckgo_search import DDGS
+import africastalking
 
+# ── Logging ───────────────────────────────────────────────────────────────────
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+)
+log = logging.getLogger(__name__)
+
+# ── Flask ─────────────────────────────────────────────────────────────────────
 app = Flask(__name__)
 
-# Configure Groq client
+# ── Groq ──────────────────────────────────────────────────────────────────────
 GROQ_API_KEY = os.environ.get("Voogle")
-client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
-
+groq_client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
 GROQ_MODEL = "llama-3.3-70b-versatile"
 
-# Initialize database on startup
+# ── Africa's Talking ──────────────────────────────────────────────────────────
+AT_USERNAME  = os.environ.get("AT_USERNAME", "sandbox")
+AT_API_KEY   = os.environ.get("AT_API_KEY")
+AT_SENDER_ID = os.environ.get("AT_SENDER_ID", "")
+
+africastalking.initialize(AT_USERNAME, AT_API_KEY)
+at_sms = africastalking.SMS
+
+log.info("AT initialised — username=%s  sender_id=%s  api_key_set=%s",
+         AT_USERNAME, AT_SENDER_ID, bool(AT_API_KEY))
+
+# ── Database ──────────────────────────────────────────────────────────────────
 from database import init_db, save_query, get_all_queries
 with app.app_context():
     init_db()
 
-# Keywords that signal a current-events / real-time query
+# ── Current-events detection ──────────────────────────────────────────────────
 CURRENT_EVENT_KEYWORDS = [
     "news", "today", "latest", "current", "recent", "now", "tonight",
     "this week", "this month", "weather", "trending", "happening",
@@ -28,89 +48,127 @@ CURRENT_EVENT_KEYWORDS = [
 
 
 def is_current_events_query(text: str) -> bool:
-    """Return True if the query is likely asking about real-time information."""
     lower = text.lower()
     return any(kw in lower for kw in CURRENT_EVENT_KEYWORDS)
 
 
 def search_web(query: str, max_results: int = 4) -> str:
-    """Fetch top DuckDuckGo results and return them as a context string."""
     try:
         with DDGS() as ddgs:
             results = list(ddgs.text(query, max_results=max_results))
         if not results:
             return ""
-        snippets = []
-        for r in results:
-            title = r.get("title", "")
-            body = r.get("body", "")
-            snippets.append(f"- {title}: {body}")
-        return "\n".join(snippets)
+        return "\n".join(
+            f"- {r.get('title','')}: {r.get('body','')}" for r in results
+        )
     except Exception as e:
+        log.warning("Web search failed: %s", e)
         return ""
 
 
+# ── AI response ───────────────────────────────────────────────────────────────
 def get_ai_response(message: str) -> str:
-    """Return an SMS-friendly AI response, with web grounding for current-events queries."""
-    if not client:
+    if not groq_client:
         return "Error: Groq API key is not configured."
-
     try:
         if is_current_events_query(message):
-            # Ground the answer with live search results
             context = search_web(message)
             if context:
-                system_prompt = (
+                system = (
                     "You are a helpful assistant replying via SMS. "
-                    "Use the search results below to answer the user's question. "
-                    "Be concise — 2 to 4 sentences maximum. Plain text only, no markdown."
+                    "Use the search results below to answer. "
+                    "Be concise — 2 to 4 sentences, plain text only, no markdown."
                 )
-                user_content = (
-                    f"Search results:\n{context}\n\n"
-                    f"Question: {message}"
-                )
+                content = f"Search results:\n{context}\n\nQuestion: {message}"
             else:
-                # Search failed — fall back to plain response
-                system_prompt = (
+                system = (
                     "You are a helpful assistant replying via SMS. "
-                    "Be concise — 2 to 4 sentences maximum. Plain text only, no markdown."
+                    "Be concise — 2 to 4 sentences, plain text only, no markdown."
                 )
-                user_content = message
+                content = message
         else:
-            system_prompt = (
+            system = (
                 "You are a helpful assistant replying via SMS. "
-                "Be concise — 2 to 4 sentences maximum. Plain text only, no markdown."
+                "Be concise — 2 to 4 sentences, plain text only, no markdown."
             )
-            user_content = message
+            content = message
 
-        response = client.chat.completions.create(
+        resp = groq_client.chat.completions.create(
             model=GROQ_MODEL,
             messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_content},
+                {"role": "system", "content": system},
+                {"role": "user",   "content": content},
             ],
         )
-        return response.choices[0].message.content.strip()
-
+        return resp.choices[0].message.content.strip()
     except Exception as e:
         return f"Error: {str(e)}"
 
 
+# ── Outbound SMS ──────────────────────────────────────────────────────────────
+def send_sms(recipient: str, message: str) -> dict:
+    """
+    Send an SMS via Africa's Talking and return a result dict.
+    Logs the full request payload and AT API response.
+    """
+    payload = {
+        "to":        recipient,
+        "message":   message,
+        "sender_id": AT_SENDER_ID or None,
+    }
+    log.info("AT SMS request payload: %s", payload)
+
+    try:
+        response = at_sms.send(
+            message=message,
+            recipients=[recipient],
+            **({"sender_id": AT_SENDER_ID} if AT_SENDER_ID else {}),
+        )
+        log.info("AT SMS API response: %s", response)
+
+        # Inspect per-recipient status
+        recipients_data = response.get("SMSMessageData", {}).get("Recipients", [])
+        if recipients_data:
+            status = recipients_data[0].get("status", "Unknown")
+            cost   = recipients_data[0].get("cost", "Unknown")
+            log.info("AT delivery status=%s  cost=%s", status, cost)
+            success = status in ("Success", "Sent")
+        else:
+            status  = response.get("SMSMessageData", {}).get("Message", "Unknown")
+            success = False
+            log.warning("AT returned no recipients: %s", response)
+
+        return {"success": success, "status": status, "raw": response}
+
+    except Exception as e:
+        log.error("AT SMS send failed: %s", e)
+        return {"success": False, "status": "error", "error": str(e)}
+
+
+# ── Routes ────────────────────────────────────────────────────────────────────
 @app.route("/sms", methods=["POST"])
 def receive_sms():
-    """
-    Africa's Talking SMS webhook endpoint.
-    Receives POST data with fields: from, to, text, date, id, linkId.
-    Returns plain text response that AT will deliver back as SMS.
-    """
-    sender = request.form.get("from", "").strip()
+    """Africa's Talking inbound SMS webhook."""
+    sender       = request.form.get("from", "").strip()
     message_text = request.form.get("text", "").strip()
+
+    log.info("Inbound SMS — from=%s  text=%r", sender, message_text)
 
     if not sender or not message_text:
         return "Missing sender or message.", 400
 
+    # 1. Generate AI response
     ai_response = get_ai_response(message_text)
+    log.info("AI response generated — to=%s  response=%r", sender, ai_response)
 
+    # 2. Send reply via Africa's Talking
+    sms_result = send_sms(recipient=sender, message=ai_response)
+    if sms_result["success"]:
+        log.info("SMS delivered successfully to %s", sender)
+    else:
+        log.error("SMS delivery failed to %s: %s", sender, sms_result.get("error") or sms_result.get("status"))
+
+    # 3. Save to database regardless of SMS delivery outcome
     timestamp = datetime.datetime.now().isoformat(sep=" ", timespec="seconds")
     save_query(
         phone_number=sender,
@@ -119,32 +177,53 @@ def receive_sms():
         timestamp=timestamp,
     )
 
-    return ai_response, 200, {"Content-Type": "text/plain"}
+    # AT webhook expects a 200 plain-text acknowledgement
+    return "OK", 200, {"Content-Type": "text/plain"}
+
+
+@app.route("/testsms")
+def test_sms():
+    """
+    Test outbound SMS independently.
+    Usage: GET /testsms?to=+265XXXXXXXXX&msg=Hello
+    """
+    recipient = request.args.get("to", "").strip()
+    message   = request.args.get("msg", "Voogle test message — outbound SMS is working!").strip()
+
+    if not recipient:
+        return jsonify({
+            "error": "Provide ?to=+265XXXXXXXXX",
+            "example": "/testsms?to=+265982838730&msg=Hello+Voogle"
+        }), 400
+
+    log.info("Test SMS — to=%s  msg=%r", recipient, message)
+    result = send_sms(recipient=recipient, message=message)
+    return jsonify(result)
 
 
 @app.route("/admin")
 def admin_dashboard():
-    """Admin dashboard showing all SMS queries and AI responses."""
     queries = get_all_queries()
     return render_template("dashboard.html", queries=queries)
 
 
 @app.route("/admin/api/queries")
 def api_queries():
-    """JSON endpoint for dashboard data."""
     queries = get_all_queries()
     return jsonify(queries)
 
 
 @app.route("/debug")
 def debug():
-    """Temporary debug endpoint — shows key presence and model config, never the full key."""
-    key_exists = GROQ_API_KEY is not None
-    key_preview = (GROQ_API_KEY[:6] + "...") if key_exists else None
+    """Temporary debug endpoint — shows config, never full secrets."""
     return jsonify({
-        "groq_api_key_exists": key_exists,
-        "groq_api_key_preview": key_preview,
+        "groq_api_key_exists": bool(GROQ_API_KEY),
+        "groq_api_key_preview": (GROQ_API_KEY[:6] + "...") if GROQ_API_KEY else None,
         "model": GROQ_MODEL,
+        "at_username": AT_USERNAME,
+        "at_sender_id": AT_SENDER_ID,
+        "at_api_key_exists": bool(AT_API_KEY),
+        "at_api_key_preview": (AT_API_KEY[:6] + "...") if AT_API_KEY else None,
     })
 
 
@@ -157,7 +236,8 @@ def health():
 def index():
     return (
         "<h2>Voogle is running.</h2>"
-        "<p>Webhook endpoint: <code>POST /sms</code></p>"
+        "<p>Inbound webhook: <code>POST /sms</code></p>"
+        "<p>Test outbound: <code>GET /testsms?to=+265XXXXXXXXX</code></p>"
         "<p><a href='/admin'>Admin Dashboard</a></p>"
     )
 
