@@ -1,13 +1,15 @@
 import os
 import datetime
 from flask import Flask, request, render_template, jsonify
-from google import genai
+from groq import Groq
 
 app = Flask(__name__)
 
-# Configure Gemini client
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
-client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
+# Configure Groq client
+GROQ_API_KEY = os.environ.get("Voogle")
+client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
+
+GROQ_MODEL = "llama-3.3-70b-versatile"
 
 # Initialize database on startup
 from database import init_db, save_query, get_all_queries
@@ -15,18 +17,18 @@ with app.app_context():
     init_db()
 
 
-def get_gemini_response(message: str) -> str:
-    """Send a message to Gemini and return the text response."""
+def get_ai_response(message: str) -> str:
+    """Send a message to Groq and return the text response."""
     if not client:
-        return "Error: GEMINI_API_KEY is not configured."
+        return "Error: Groq API key is not configured."
     try:
-        response = client.models.generate_content(
-            model="gemini-2.0-flash",
-            contents=message,
+        response = client.chat.completions.create(
+            model=GROQ_MODEL,
+            messages=[{"role": "user", "content": message}],
         )
-        return response.text.strip()
+        return response.choices[0].message.content.strip()
     except Exception as e:
-        return f"Error contacting Gemini: {str(e)}"
+        return f"Error contacting Groq: {str(e)}"
 
 
 @app.route("/sms", methods=["POST"])
@@ -42,25 +44,25 @@ def receive_sms():
     if not sender or not message_text:
         return "Missing sender or message.", 400
 
-    # Get Gemini response
-    gemini_response = get_gemini_response(message_text)
+    # Get AI response
+    ai_response = get_ai_response(message_text)
 
     # Save to database
     timestamp = datetime.datetime.now().isoformat(sep=" ", timespec="seconds")
     save_query(
         phone_number=sender,
         user_query=message_text,
-        gemini_response=gemini_response,
+        gemini_response=ai_response,
         timestamp=timestamp,
     )
 
     # Africa's Talking expects plain text back
-    return gemini_response, 200, {"Content-Type": "text/plain"}
+    return ai_response, 200, {"Content-Type": "text/plain"}
 
 
 @app.route("/admin")
 def admin_dashboard():
-    """Admin dashboard showing all SMS queries and Gemini responses."""
+    """Admin dashboard showing all SMS queries and AI responses."""
     queries = get_all_queries()
     return render_template("dashboard.html", queries=queries)
 
@@ -75,12 +77,12 @@ def api_queries():
 @app.route("/debug")
 def debug():
     """Temporary debug endpoint — shows key presence and model config, never the full key."""
-    key_exists = GEMINI_API_KEY is not None
-    key_preview = (GEMINI_API_KEY[:6] + "...") if key_exists else None
+    key_exists = GROQ_API_KEY is not None
+    key_preview = (GROQ_API_KEY[:6] + "...") if key_exists else None
     return jsonify({
-        "gemini_api_key_exists": key_exists,
-        "gemini_api_key_preview": key_preview,
-        "model": "gemini-2.0-flash",
+        "groq_api_key_exists": key_exists,
+        "groq_api_key_preview": key_preview,
+        "model": GROQ_MODEL,
     })
 
 
