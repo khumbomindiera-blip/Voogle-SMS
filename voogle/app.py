@@ -2,6 +2,7 @@ import os
 import datetime
 from flask import Flask, request, render_template, jsonify
 from groq import Groq
+from duckduckgo_search import DDGS
 
 app = Flask(__name__)
 
@@ -16,19 +17,83 @@ from database import init_db, save_query, get_all_queries
 with app.app_context():
     init_db()
 
+# Keywords that signal a current-events / real-time query
+CURRENT_EVENT_KEYWORDS = [
+    "news", "today", "latest", "current", "recent", "now", "tonight",
+    "this week", "this month", "weather", "trending", "happening",
+    "update", "score", "results", "election", "match", "game",
+    "breaking", "died", "arrested", "launched", "announced", "released",
+    "yesterday", "last night", "this morning",
+]
+
+
+def is_current_events_query(text: str) -> bool:
+    """Return True if the query is likely asking about real-time information."""
+    lower = text.lower()
+    return any(kw in lower for kw in CURRENT_EVENT_KEYWORDS)
+
+
+def search_web(query: str, max_results: int = 4) -> str:
+    """Fetch top DuckDuckGo results and return them as a context string."""
+    try:
+        with DDGS() as ddgs:
+            results = list(ddgs.text(query, max_results=max_results))
+        if not results:
+            return ""
+        snippets = []
+        for r in results:
+            title = r.get("title", "")
+            body = r.get("body", "")
+            snippets.append(f"- {title}: {body}")
+        return "\n".join(snippets)
+    except Exception as e:
+        return ""
+
 
 def get_ai_response(message: str) -> str:
-    """Send a message to Groq and return the text response."""
+    """Return an SMS-friendly AI response, with web grounding for current-events queries."""
     if not client:
         return "Error: Groq API key is not configured."
+
     try:
+        if is_current_events_query(message):
+            # Ground the answer with live search results
+            context = search_web(message)
+            if context:
+                system_prompt = (
+                    "You are a helpful assistant replying via SMS. "
+                    "Use the search results below to answer the user's question. "
+                    "Be concise — 2 to 4 sentences maximum. Plain text only, no markdown."
+                )
+                user_content = (
+                    f"Search results:\n{context}\n\n"
+                    f"Question: {message}"
+                )
+            else:
+                # Search failed — fall back to plain response
+                system_prompt = (
+                    "You are a helpful assistant replying via SMS. "
+                    "Be concise — 2 to 4 sentences maximum. Plain text only, no markdown."
+                )
+                user_content = message
+        else:
+            system_prompt = (
+                "You are a helpful assistant replying via SMS. "
+                "Be concise — 2 to 4 sentences maximum. Plain text only, no markdown."
+            )
+            user_content = message
+
         response = client.chat.completions.create(
             model=GROQ_MODEL,
-            messages=[{"role": "user", "content": message}],
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_content},
+            ],
         )
         return response.choices[0].message.content.strip()
+
     except Exception as e:
-        return f"Error contacting Groq: {str(e)}"
+        return f"Error: {str(e)}"
 
 
 @app.route("/sms", methods=["POST"])
@@ -44,10 +109,8 @@ def receive_sms():
     if not sender or not message_text:
         return "Missing sender or message.", 400
 
-    # Get AI response
     ai_response = get_ai_response(message_text)
 
-    # Save to database
     timestamp = datetime.datetime.now().isoformat(sep=" ", timespec="seconds")
     save_query(
         phone_number=sender,
@@ -56,7 +119,6 @@ def receive_sms():
         timestamp=timestamp,
     )
 
-    # Africa's Talking expects plain text back
     return ai_response, 200, {"Content-Type": "text/plain"}
 
 
