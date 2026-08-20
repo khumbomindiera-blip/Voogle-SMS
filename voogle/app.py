@@ -22,15 +22,23 @@ groq_client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
 GROQ_MODEL = "llama-3.3-70b-versatile"
 
 # ── Africa's Talking ──────────────────────────────────────────────────────────
-AT_USERNAME  = os.environ.get("AT_USERNAME", "sandbox")
-AT_API_KEY   = os.environ.get("AT_API_KEY")
+AT_USERNAME = os.environ.get("AT_USERNAME", "sandbox")
+AT_API_KEY = os.environ.get("AT_API_KEY")
 AT_SENDER_ID = os.environ.get("AT_SENDER_ID", "")
 
-africastalking.initialize(AT_USERNAME, AT_API_KEY)
-at_sms = africastalking.SMS
+if AT_API_KEY:
+    africastalking.initialize(AT_USERNAME, AT_API_KEY)
+    at_sms = africastalking.SMS
 
-log.info("AT initialised — username=%s  sender_id=%s  api_key_set=%s",
-         AT_USERNAME, AT_SENDER_ID, bool(AT_API_KEY))
+    log.info(
+        "AT initialised — username=%s sender_id=%s api_key_set=%s",
+        AT_USERNAME,
+        AT_SENDER_ID,
+        True
+    )
+else:
+    at_sms = None
+    log.warning("Africa's Talking API key not configured")
 
 # ── Database ──────────────────────────────────────────────────────────────────
 from database import init_db, save_query, get_all_queries
@@ -105,44 +113,72 @@ def get_ai_response(message: str) -> str:
         return f"Error: {str(e)}"
 
 
-# ── Outbound SMS ──────────────────────────────────────────────────────────────
 def send_sms(recipient: str, message: str) -> dict:
     """
     Send an SMS via Africa's Talking and return a result dict.
-    Logs the full request payload and AT API response.
     """
+
+    if at_sms is None:
+        return {
+            "success": False,
+            "status": "disabled",
+            "error": "Africa's Talking not configured"
+        }
+
     payload = {
-        "to":        recipient,
-        "message":   message,
+        "to": recipient,
+        "message": message,
         "sender_id": AT_SENDER_ID or None,
     }
+
     log.info("AT SMS request payload: %s", payload)
 
     try:
         response = at_sms.send(
             message=message,
             recipients=[recipient],
-            **({"sender_id": AT_SENDER_ID} if AT_SENDER_ID else {}),
+            **({"sender_id": AT_SENDER_ID} if AT_SENDER_ID else {})
         )
+
         log.info("AT SMS API response: %s", response)
 
-        # Inspect per-recipient status
-        recipients_data = response.get("SMSMessageData", {}).get("Recipients", [])
+        recipients_data = response.get(
+            "SMSMessageData", {}
+        ).get("Recipients", [])
+
         if recipients_data:
             status = recipients_data[0].get("status", "Unknown")
-            cost   = recipients_data[0].get("cost", "Unknown")
-            log.info("AT delivery status=%s  cost=%s", status, cost)
-            success = status in ("Success", "Sent")
-        else:
-            status  = response.get("SMSMessageData", {}).get("Message", "Unknown")
-            success = False
-            log.warning("AT returned no recipients: %s", response)
+            cost = recipients_data[0].get("cost", "Unknown")
 
-        return {"success": success, "status": status, "raw": response}
+            log.info(
+                "AT delivery status=%s cost=%s",
+                status,
+                cost
+            )
+
+            success = status in ("Success", "Sent")
+
+        else:
+            status = response.get(
+                "SMSMessageData", {}
+            ).get("Message", "Unknown")
+
+            success = False
+
+        return {
+            "success": success,
+            "status": status,
+            "raw": response
+        }
 
     except Exception as e:
         log.error("AT SMS send failed: %s", e)
-        return {"success": False, "status": "error", "error": str(e)}
+
+        return {
+            "success": False,
+            "status": "error",
+            "error": str(e)
+        }
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────
