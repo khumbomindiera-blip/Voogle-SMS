@@ -251,13 +251,12 @@ def api_queries():
 
 @app.route("/debug")
 def debug():
-    """Temporary debug endpoint — shows config, never full secrets."""
     return jsonify({
-       "gemini_key_exists": bool(GEMINI_API_KEY),
-"gemini_key_preview": (
-    GEMINI_API_KEY[:6] + "..."
-) if GEMINI_API_KEY else None,
-        "model": MODEL,
+        "gemini_key_exists": bool(GEMINI_API_KEY),
+        "gemini_key_preview": (
+            GEMINI_API_KEY[:6] + "..."
+        ) if GEMINI_API_KEY else None,
+        "model_name": "gemini-1.5-flash",
         "at_username": AT_USERNAME,
         "at_sender_id": AT_SENDER_ID,
         "at_api_key_exists": bool(AT_API_KEY),
