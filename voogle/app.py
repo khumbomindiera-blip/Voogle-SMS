@@ -81,10 +81,8 @@ def search_web(query: str, max_results: int = 4) -> str:
         log.warning("Web search failed: %s", e)
         return ""
 
-
 def get_weather_blantyre():
     try:
-
         url = (
             "https://api.open-meteo.com/v1/forecast"
             "?latitude=-15.7861"
@@ -95,7 +93,7 @@ def get_weather_blantyre():
         r = requests.get(url, timeout=10)
         data = r.json()
 
-        current = data.get("current", {})
+        current = data["current"]
 
         temp = current.get("temperature_2m", "N/A")
         rain = current.get("rain", 0)
@@ -104,7 +102,7 @@ def get_weather_blantyre():
         return (
             f"Current weather in Blantyre:\n"
             f"Temperature: {temp}°C\n"
-            f"Rainfall: {rain} mm\n"
+            f"Rain: {rain} mm\n"
             f"Precipitation: {precip} mm"
         )
 
@@ -119,45 +117,68 @@ def get_ai_response(message: str):
 
     try:
 
-        context = ""
+        lower = message.lower()
 
-        climate_words = [
+        # Weather / climate questions
+        weather_keywords = [
             "weather",
             "rain",
-            "flood",
-            "flooding",
-            "heat",
             "temperature",
-            "climate",
-            "drought",
+            "flood",
             "storm",
-            "wind"
+            "heat",
+            "climate",
+            "forecast",
+            "mvula",
+            "kutentha",
+            "nyengo"
         ]
 
-        if any(word in message.lower() for word in climate_words):
+        if any(word in lower for word in weather_keywords):
 
-            context = get_weather_blantyre()
+            weather_data = get_weather_blantyre()
 
-        elif is_current_events_query(message):
+            prompt = f"""
+You are Voogle Climate AI for Malawi.
 
+Live weather data:
+
+{weather_data}
+
+User question:
+{message}
+
+Answer in simple SMS format.
+
+Rules:
+- Maximum 4 short sentences.
+- Use the weather data above.
+- Give practical advice.
+- If flood risk cannot be determined, say so.
+"""
+
+            response = model.generate_content(prompt)
+
+            return response.text.strip()
+
+        # Normal questions
+        context = ""
+
+        if is_current_events_query(message):
             context = search_web(message)
 
         prompt = f"""
-You are Voogle, an AI assistant for Malawi.
+You are Voogle AI Assistant for Malawi.
 
-Rules:
-- Reply in plain SMS format.
-- Maximum 4 short sentences.
-- Be practical and helpful.
-- If climate, weather, farming or environment related, prioritize actionable advice.
-- Use the supplied information if available.
-- If uncertain, say so.
-
-Context:
+Search Results:
 {context}
 
 Question:
 {message}
+
+Rules:
+- Maximum 4 short sentences.
+- Plain SMS format.
 """
 
         response = model.generate_content(prompt)
