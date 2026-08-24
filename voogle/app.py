@@ -1,6 +1,7 @@
 import os
 import logging
 import datetime
+import requests
 from flask import Flask, request, render_template, jsonify
 import google.generativeai as genai
 from duckduckgo_search import DDGS
@@ -85,8 +86,33 @@ def get_ai_response(message: str):
 
         context = ""
 
-        if is_current_events_query(message):
-            context = search_web(message)
+        def get_weather_blantyre():
+    try:
+        url = (
+            "https://api.open-meteo.com/v1/forecast"
+            "?latitude=-15.7861"
+            "&longitude=35.0058"
+            "&current=temperature_2m,precipitation,rain"
+        )
+
+        r = requests.get(url, timeout=10)
+        data = r.json()
+
+        current = data["current"]
+
+        temp = current.get("temperature_2m", "N/A")
+        rain = current.get("rain", 0)
+        precip = current.get("precipitation", 0)
+
+        return (
+            f"Current weather in Blantyre:\n"
+            f"Temperature: {temp}°C\n"
+            f"Rain: {rain} mm\n"
+            f"Precipitation: {precip} mm"
+        )
+
+    except Exception as e:
+        return f"Weather service unavailable: {e}"
 
         prompt = f"""
 You are Voogle, an AI assistant for Malawi.
