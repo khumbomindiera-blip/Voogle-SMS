@@ -256,7 +256,7 @@ def debug():
         "gemini_key_preview": (
             GEMINI_API_KEY[:6] + "..."
         ) if GEMINI_API_KEY else None,
-       model = genai.GenerativeModel("gemini-2.0-flash"),
+      model = genai.GenerativeModel("gemini-3.7-flash"),
         "at_username": AT_USERNAME,
         "at_sender_id": AT_SENDER_ID,
         "at_api_key_exists": bool(AT_API_KEY),
