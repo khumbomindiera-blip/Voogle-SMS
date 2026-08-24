@@ -2,7 +2,7 @@ import os
 import logging
 import datetime
 from flask import Flask, request, render_template, jsonify
-from openai import OpenAI
+import google.generativeai as genai
 from duckduckgo_search import DDGS
 import africastalking
 
@@ -16,14 +16,13 @@ log = logging.getLogger(__name__)
 # ── Flask ─────────────────────────────────────────────────────────────────────
 app = Flask(__name__)
 
-OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
-client = OpenAI(
-    base_url="https://openrouter.ai/api/v1",
-    api_key=OPENROUTER_API_KEY
-) if OPENROUTER_API_KEY else None
-
-MODEL = "meta-llama/llama-3.1-8b-instruct"
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
+    model = genai.GenerativeModel("gemini-1.5-flash")
+else:
+    model = None
 
 # ── Africa's Talking ──────────────────────────────────────────────────────────
 AT_USERNAME = os.environ.get("AT_USERNAME", "sandbox")
@@ -77,11 +76,10 @@ def search_web(query: str, max_results: int = 4) -> str:
         log.warning("Web search failed: %s", e)
         return ""
 
-
 def get_ai_response(message: str):
 
-    if not client:
-        return "Error: OpenRouter API key not configured."
+    if not model:
+        return "Error: Gemini API key not configured."
 
     try:
 
@@ -90,19 +88,17 @@ def get_ai_response(message: str):
         if is_current_events_query(message):
             context = search_web(message)
 
-        system_prompt = """
+        prompt = f"""
 You are Voogle, an AI assistant for Malawi.
 
 Rules:
-- Answer briefly.
+- Reply in plain SMS format.
 - Maximum 4 short sentences.
-- SMS friendly.
-- If climate, agriculture or weather related, prioritize practical advice.
-- If current information is supplied in Search Results, use it.
-- If unsure, say so.
-"""
+- Be practical and helpful.
+- If climate, weather, farming or environment related, prioritize actionable advice.
+- Use search results when available.
+- If uncertain, say so.
 
-        user_prompt = f"""
 Search Results:
 {context}
 
@@ -110,23 +106,9 @@ Question:
 {message}
 """
 
-        response = client.chat.completions.create(
-            model=MODEL,
-            messages=[
-                {
-                    "role": "system",
-                    "content": system_prompt
-                },
-                {
-                    "role": "user",
-                    "content": user_prompt
-                }
-            ],
-            max_tokens=250,
-            temperature=0.4
-        )
+        response = model.generate_content(prompt)
 
-        return response.choices[0].message.content.strip()
+        return response.text.strip()
 
     except Exception as e:
         return f"Error: {str(e)}"
@@ -271,10 +253,10 @@ def api_queries():
 def debug():
     """Temporary debug endpoint — shows config, never full secrets."""
     return jsonify({
-        "openrouter_key_exists": bool(OPENROUTER_API_KEY),
-        "openrouter_key_preview": (
-            OPENROUTER_API_KEY[:6] + "..."
-        ) if OPENROUTER_API_KEY else None,
+       "gemini_key_exists": bool(GEMINI_API_KEY),
+"gemini_key_preview": (
+    GEMINI_API_KEY[:6] + "..."
+) if GEMINI_API_KEY else None,
         "model": MODEL,
         "at_username": AT_USERNAME,
         "at_sender_id": AT_SENDER_ID,
