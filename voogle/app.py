@@ -68,26 +68,23 @@ def search_web(query: str, max_results: int = 4) -> str:
     try:
         with DDGS() as ddgs:
             results = list(ddgs.text(query, max_results=max_results))
+
         if not results:
             return ""
+
         return "\n".join(
-            f"- {r.get('title','')}: {r.get('body','')}" for r in results
+            f"- {r.get('title','')}: {r.get('body','')}"
+            for r in results
         )
+
     except Exception as e:
         log.warning("Web search failed: %s", e)
         return ""
 
-def get_ai_response(message: str):
 
-    if not model:
-        return "Error: Gemini API key not configured."
-
+def get_weather_blantyre():
     try:
 
-        context = ""
-
-        def get_weather_blantyre():
-    try:
         url = (
             "https://api.open-meteo.com/v1/forecast"
             "?latitude=-15.7861"
@@ -98,7 +95,7 @@ def get_ai_response(message: str):
         r = requests.get(url, timeout=10)
         data = r.json()
 
-        current = data["current"]
+        current = data.get("current", {})
 
         temp = current.get("temperature_2m", "N/A")
         rain = current.get("rain", 0)
@@ -107,12 +104,43 @@ def get_ai_response(message: str):
         return (
             f"Current weather in Blantyre:\n"
             f"Temperature: {temp}°C\n"
-            f"Rain: {rain} mm\n"
+            f"Rainfall: {rain} mm\n"
             f"Precipitation: {precip} mm"
         )
 
     except Exception as e:
         return f"Weather service unavailable: {e}"
+
+
+def get_ai_response(message: str):
+
+    if not model:
+        return "Error: Gemini API key not configured."
+
+    try:
+
+        context = ""
+
+        climate_words = [
+            "weather",
+            "rain",
+            "flood",
+            "flooding",
+            "heat",
+            "temperature",
+            "climate",
+            "drought",
+            "storm",
+            "wind"
+        ]
+
+        if any(word in message.lower() for word in climate_words):
+
+            context = get_weather_blantyre()
+
+        elif is_current_events_query(message):
+
+            context = search_web(message)
 
         prompt = f"""
 You are Voogle, an AI assistant for Malawi.
@@ -122,10 +150,10 @@ Rules:
 - Maximum 4 short sentences.
 - Be practical and helpful.
 - If climate, weather, farming or environment related, prioritize actionable advice.
-- Use search results when available.
+- Use the supplied information if available.
 - If uncertain, say so.
 
-Search Results:
+Context:
 {context}
 
 Question:
@@ -138,7 +166,6 @@ Question:
 
     except Exception as e:
         return f"Error: {str(e)}"
-
 
 def send_sms(recipient: str, message: str) -> dict:
     """
