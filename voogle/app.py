@@ -2,7 +2,7 @@ import os
 import logging
 import datetime
 from flask import Flask, request, render_template, jsonify
-from groq import Groq
+from openai import OpenAI
 from duckduckgo_search import DDGS
 import africastalking
 
@@ -16,10 +16,14 @@ log = logging.getLogger(__name__)
 # ── Flask ─────────────────────────────────────────────────────────────────────
 app = Flask(__name__)
 
-# ── Groq ──────────────────────────────────────────────────────────────────────
-GROQ_API_KEY = os.environ.get("Voogle")
-groq_client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
-GROQ_MODEL = "llama-3.3-70b-versatile"
+OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY")
+
+client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=OPENROUTER_API_KEY
+) if OPENROUTER_API_KEY else None
+
+MODEL = "meta-llama/llama-3.1-8b-instruct"
 
 # ── Africa's Talking ──────────────────────────────────────────────────────────
 AT_USERNAME = os.environ.get("AT_USERNAME", "sandbox")
@@ -74,41 +78,56 @@ def search_web(query: str, max_results: int = 4) -> str:
         return ""
 
 
-# ── AI response ───────────────────────────────────────────────────────────────
-def get_ai_response(message: str) -> str:
-    if not groq_client:
-        return "Error: Groq API key is not configured."
+def get_ai_response(message: str):
+
+    if not client:
+        return "Error: OpenRouter API key not configured."
+
     try:
+
+        context = ""
+
         if is_current_events_query(message):
             context = search_web(message)
-            if context:
-                system = (
-                    "You are a helpful assistant replying via SMS. "
-                    "Use the search results below to answer. "
-                    "Be concise — 2 to 4 sentences, plain text only, no markdown."
-                )
-                content = f"Search results:\n{context}\n\nQuestion: {message}"
-            else:
-                system = (
-                    "You are a helpful assistant replying via SMS. "
-                    "Be concise — 2 to 4 sentences, plain text only, no markdown."
-                )
-                content = message
-        else:
-            system = (
-                "You are a helpful assistant replying via SMS. "
-                "Be concise — 2 to 4 sentences, plain text only, no markdown."
-            )
-            content = message
 
-        resp = groq_client.chat.completions.create(
-            model=GROQ_MODEL,
+        system_prompt = """
+You are Voogle, an AI assistant for Malawi.
+
+Rules:
+- Answer briefly.
+- Maximum 4 short sentences.
+- SMS friendly.
+- If climate, agriculture or weather related, prioritize practical advice.
+- If current information is supplied in Search Results, use it.
+- If unsure, say so.
+"""
+
+        user_prompt = f"""
+Search Results:
+{context}
+
+Question:
+{message}
+"""
+
+        response = client.chat.completions.create(
+            model=MODEL,
             messages=[
-                {"role": "system", "content": system},
-                {"role": "user",   "content": content},
+                {
+                    "role": "system",
+                    "content": system_prompt
+                },
+                {
+                    "role": "user",
+                    "content": user_prompt
+                }
             ],
+            max_tokens=250,
+            temperature=0.4
         )
-        return resp.choices[0].message.content.strip()
+
+        return response.choices[0].message.content.strip()
+
     except Exception as e:
         return f"Error: {str(e)}"
 
@@ -248,18 +267,21 @@ def api_queries():
     queries = get_all_queries()
     return jsonify(queries)
 
-
 @app.route("/debug")
 def debug():
     """Temporary debug endpoint — shows config, never full secrets."""
     return jsonify({
-        "groq_api_key_exists": bool(GROQ_API_KEY),
-        "groq_api_key_preview": (GROQ_API_KEY[:6] + "...") if GROQ_API_KEY else None,
-        "model": GROQ_MODEL,
+        "openrouter_key_exists": bool(OPENROUTER_API_KEY),
+        "openrouter_key_preview": (
+            OPENROUTER_API_KEY[:6] + "..."
+        ) if OPENROUTER_API_KEY else None,
+        "model": MODEL,
         "at_username": AT_USERNAME,
         "at_sender_id": AT_SENDER_ID,
         "at_api_key_exists": bool(AT_API_KEY),
-        "at_api_key_preview": (AT_API_KEY[:6] + "...") if AT_API_KEY else None,
+        "at_api_key_preview": (
+            AT_API_KEY[:6] + "..."
+        ) if AT_API_KEY else None,
     })
 
 
