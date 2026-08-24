@@ -256,7 +256,7 @@ def debug():
         "gemini_key_preview": (
             GEMINI_API_KEY[:6] + "..."
         ) if GEMINI_API_KEY else None,
-        "model_name": "gemini-1.5-flash",
+       model = genai.GenerativeModel("gemini-2.0-flash"),
         "at_username": AT_USERNAME,
         "at_sender_id": AT_SENDER_ID,
         "at_api_key_exists": bool(AT_API_KEY),
@@ -271,6 +271,21 @@ def health():
     return {"status": "ok", "app": "Voogle"}, 200
 
 
+@app.route("/health")
+def health():
+    return {"status": "ok", "app": "Voogle"}, 200
+
+
+@app.route("/models")
+def models():
+    return {
+        "models": [
+            m.name
+            for m in genai.list_models()
+        ]
+    }
+
+
 @app.route("/")
 def index():
     return (
@@ -279,7 +294,6 @@ def index():
         "<p>Test outbound: <code>GET /testsms?to=+265XXXXXXXXX</code></p>"
         "<p><a href='/admin'>Admin Dashboard</a></p>"
     )
-
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
