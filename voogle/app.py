@@ -20,7 +20,7 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
-   model = genai.GenerativeModel("gemini-3.7-flash")
+    model = genai.GenerativeModel("gemini-3.7-flash")
 else:
     model = None
 
@@ -256,7 +256,7 @@ def debug():
         "gemini_key_preview": (
             GEMINI_API_KEY[:6] + "..."
         ) if GEMINI_API_KEY else None,
-      model = genai.GenerativeModel("gemini-3.7-flash"),
+        "model_name": "gemini-3.7-flash",
         "at_username": AT_USERNAME,
         "at_sender_id": AT_SENDER_ID,
         "at_api_key_exists": bool(AT_API_KEY),
@@ -264,11 +264,6 @@ def debug():
             AT_API_KEY[:6] + "..."
         ) if AT_API_KEY else None,
     })
-
-
-@app.route("/health")
-def health():
-    return {"status": "ok", "app": "Voogle"}, 200
 
 
 @app.route("/health")
