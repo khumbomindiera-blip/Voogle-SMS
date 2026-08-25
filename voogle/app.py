@@ -297,29 +297,29 @@ def ask():
     return get_ai_response(text)
 # ── Routes ────────────────────────────────────────────────────────────────────
 
+import re
+
 @app.route("/sms", methods=["POST"])
 def receive_sms():
 
-    # Log everything arriving from SMS Forwarder
-    log.info("FORM DATA: %s", dict(request.form))
-    log.info("JSON DATA: %s", request.get_json(silent=True))
-
-    # Handle JSON payload
     data = request.get_json(silent=True) or {}
 
-    sender = (
-        data.get("from")
-        or data.get("number")
-        or data.get("sender")
-        or request.form.get("from", "")
-    ).strip()
+    raw_text = data.get("key", "")
 
-    message_text = (
-        data.get("text")
-        or data.get("message")
-        or data.get("msg")
-        or request.form.get("text", "")
-    ).strip()
+    log.info("RAW JSON: %s", data)
+
+    sender = ""
+    message_text = ""
+
+    match = re.search(
+        r"From\s*:\s*(\+?\d+).*?\n(.*)",
+        raw_text,
+        re.DOTALL
+    )
+
+    if match:
+        sender = match.group(1).strip()
+        message_text = match.group(2).strip()
 
     log.info(
         "Inbound SMS — from=%s text=%r",
@@ -330,30 +330,16 @@ def receive_sms():
     if not message_text:
         return "Missing message.", 400
 
-    # Generate AI response
     ai_response = get_ai_response(message_text)
 
-    # Only send SMS back if sender exists
     if sender:
         sms_result = send_sms(
             recipient=sender,
             message=ai_response
         )
 
-        if sms_result["success"]:
-            log.info(
-                "SMS delivered successfully to %s",
-                sender
-            )
-        else:
-            log.error(
-                "SMS delivery failed to %s: %s",
-                sender,
-                sms_result.get("error")
-                or sms_result.get("status")
-            )
+        log.info("SMS Result: %s", sms_result)
 
-    # Save query
     timestamp = datetime.datetime.now().isoformat(
         sep=" ",
         timespec="seconds"
