@@ -1,49 +1,41 @@
-import sqlite3
 import os
+from supabase import create_client
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "voogle.db")
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
-
-def get_connection():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+supabase = create_client(
+    SUPABASE_URL,
+    SUPABASE_KEY
+)
 
 
 def init_db():
-    """Create the queries table if it doesn't exist."""
-    conn = get_connection()
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS queries (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            phone_number TEXT NOT NULL,
-            user_query TEXT NOT NULL,
-            gemini_response TEXT NOT NULL,
-            timestamp TEXT NOT NULL
-        )
-        """
+    """
+    No-op.
+    Table already exists in Supabase.
+    """
+    pass
+
+
+def save_query(phone_number, user_query, gemini_response, timestamp):
+
+    supabase.table("queries").insert({
+        "phone_number": phone_number,
+        "user_query": user_query,
+        "gemini_response": gemini_response,
+        "timestamp": timestamp
+    }).execute()
+
+
+def get_all_queries():
+
+    response = (
+        supabase
+        .table("queries")
+        .select("*")
+        .order("id", desc=True)
+        .execute()
     )
-    conn.commit()
-    conn.close()
 
-
-def save_query(phone_number: str, user_query: str, gemini_response: str, timestamp: str):
-    """Insert a new query record."""
-    conn = get_connection()
-    conn.execute(
-        "INSERT INTO queries (phone_number, user_query, gemini_response, timestamp) VALUES (?, ?, ?, ?)",
-        (phone_number, user_query, gemini_response, timestamp),
-    )
-    conn.commit()
-    conn.close()
-
-
-def get_all_queries() -> list[dict]:
-    """Return all queries ordered newest first."""
-    conn = get_connection()
-    rows = conn.execute(
-        "SELECT id, phone_number, user_query, gemini_response, timestamp FROM queries ORDER BY id DESC"
-    ).fetchall()
-    conn.close()
-    return [dict(row) for row in rows]
+    return response.data
