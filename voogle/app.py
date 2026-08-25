@@ -298,19 +298,27 @@ def ask():
 # ── Routes ────────────────────────────────────────────────────────────────────
 
 import re
+import datetime
+from flask import jsonify
+
+# ── Routes ────────────────────────────────────────────────────────────────────
 
 @app.route("/sms", methods=["POST"])
 def receive_sms():
 
+    # Read JSON from SMS Forwarder
     data = request.get_json(silent=True) or {}
 
-    raw_text = data.get("key", "")
-
     log.info("RAW JSON: %s", data)
+
+    raw_text = data.get("key", "")
 
     sender = ""
     message_text = ""
 
+    # Parse SMS Forwarder format:
+    # From : +265990776617()
+    # Hello
     match = re.search(
         r"From\s*:\s*(\+?\d+).*?\n(.*)",
         raw_text,
@@ -328,31 +336,48 @@ def receive_sms():
     )
 
     if not message_text:
-        return "Missing message.", 400
+        return jsonify({
+            "reply": "Sorry, I could not read your message."
+        }), 200
 
-    ai_response = get_ai_response(message_text)
+    try:
 
-    if sender:
-        sms_result = send_sms(
-            recipient=sender,
-            message=ai_response
+        # Generate AI response
+        ai_response = get_ai_response(message_text)
+
+        log.info(
+            "AI Reply => %s",
+            ai_response
         )
 
-        log.info("SMS Result: %s", sms_result)
+        # Save to database
+        timestamp = datetime.datetime.now().isoformat(
+            sep=" ",
+            timespec="seconds"
+        )
 
-    timestamp = datetime.datetime.now().isoformat(
-        sep=" ",
-        timespec="seconds"
-    )
+        save_query(
+            phone_number=sender or "UNKNOWN",
+            user_query=message_text,
+            gemini_response=ai_response,
+            timestamp=timestamp,
+        )
 
-    save_query(
-        phone_number=sender or "UNKNOWN",
-        user_query=message_text,
-        gemini_response=ai_response,
-        timestamp=timestamp,
-    )
+        # Return response to SMS Forwarder
+        return jsonify({
+            "reply": ai_response
+        }), 200
 
-    return "OK", 200
+    except Exception as e:
+
+        log.error(
+            "SMS processing failed: %s",
+            str(e)
+        )
+
+        return jsonify({
+            "reply": "Sorry, Voogle is temporarily unavailable."
+        }), 200
 
 @app.route("/admin")
 def admin_dashboard():
