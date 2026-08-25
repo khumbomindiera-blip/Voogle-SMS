@@ -140,7 +140,6 @@ def get_weather(location="blantyre"):
     except Exception as e:
         return f"Weather service unavailable: {e}"
 
-
 def get_ai_response(message: str):
 
     if not model:
@@ -167,18 +166,16 @@ def get_ai_response(message: str):
 
         if any(word in lower for word in weather_keywords):
 
-           district_found = "blantyre"
+            district_found = "blantyre"
 
-for district in DISTRICTS.keys():
-    if district in lower:
-        district_found = district
-        break
+            for district in DISTRICTS.keys():
+                if district in lower:
+                    district_found = district
+                    break
 
-weather_data = get_weather(district_found)
+            weather_data = get_weather(district_found)
+
             prompt = f"""
-You are Voogle Climate AI for Malawi.
-
-prompt = f"""
 You are Voogle Climate AI for Malawi.
 
 Weather Data:
@@ -197,7 +194,6 @@ Rules:
 """
 
             response = model.generate_content(prompt)
-
             return response.text.strip()
 
         # Normal questions
@@ -221,7 +217,6 @@ Rules:
 """
 
         response = model.generate_content(prompt)
-
         return response.text.strip()
 
     except Exception as e:
@@ -294,7 +289,12 @@ def send_sms(recipient: str, message: str) -> dict:
             "error": str(e)
         }
 
+@app.route("/ask")
+def ask():
 
+    text = request.args.get("text", "")
+
+    return get_ai_response(text)
 # ── Routes ────────────────────────────────────────────────────────────────────
 @app.route("/sms", methods=["POST"])
 def receive_sms():
