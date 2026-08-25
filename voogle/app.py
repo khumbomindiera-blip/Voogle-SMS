@@ -342,8 +342,16 @@ def receive_sms():
 
     try:
 
-        # Generate AI response
+        log.info("STEP 1: About to call Gemini")
+
         ai_response = get_ai_response(message_text)
+
+        log.info("STEP 2: Gemini returned")
+
+        if not ai_response:
+            ai_response = (
+                "Sorry, I could not generate a response right now."
+            )
 
         log.info(
             "AI Reply => %s",
@@ -363,6 +371,10 @@ def receive_sms():
             timestamp=timestamp,
         )
 
+        log.info(
+            "STEP 3: Saved query to database"
+        )
+
         # Return response to SMS Forwarder
         return jsonify({
             "reply": ai_response
@@ -370,13 +382,12 @@ def receive_sms():
 
     except Exception as e:
 
-        log.error(
-            "SMS processing failed: %s",
-            str(e)
+        log.exception(
+            "SMS processing failed"
         )
 
         return jsonify({
-            "reply": "Sorry, Voogle is temporarily unavailable."
+            "reply": f"System error: {str(e)}"
         }), 200
 
 @app.route("/admin")
