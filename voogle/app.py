@@ -81,16 +81,47 @@ def search_web(query: str, max_results: int = 4) -> str:
         log.warning("Web search failed: %s", e)
         return ""
 
-def get_weather_blantyre():
+DISTRICTS = {
+    "blantyre": (-15.7861, 35.0058),
+    "lilongwe": (-13.9833, 33.7833),
+    "mzuzu": (-11.4656, 34.0207),
+    "zomba": (-15.3833, 35.3333),
+    "mangochi": (-14.4781, 35.2645),
+    "salima": (-13.7804, 34.4587),
+    "kasungu": (-13.0333, 33.4833),
+    "karonga": (-9.9333, 33.9333),
+    "mulanje": (-16.0333, 35.5000),
+    "mchinji": (-13.8000, 32.8833),
+    "dedza": (-14.3833, 34.3333),
+    "ntcheu": (-14.8167, 34.6333),
+    "balaka": (-14.9833, 34.9500),
+    "phalombe": (-15.8000, 35.6500),
+    "chikwawa": (-16.0333, 34.8000),
+    "nsanje": (-16.9167, 35.2667),
+    "rumphi": (-11.0167, 33.8500),
+    "nkhatabay": (-11.6000, 34.3000),
+    "likoma": (-12.0500, 34.7333)
+}
+def get_weather(location="blantyre"):
+
+    location = location.lower().strip()
+
+    if location not in DISTRICTS:
+        return f"Location '{location}' not found in Malawi."
+
+    lat, lon = DISTRICTS[location]
+
     try:
+
         url = (
-            "https://api.open-meteo.com/v1/forecast"
-            "?latitude=-15.7861"
-            "&longitude=35.0058"
-            "&current=temperature_2m,precipitation,rain"
+            f"https://api.open-meteo.com/v1/forecast"
+            f"?latitude={lat}"
+            f"&longitude={lon}"
+            f"&current=temperature_2m,precipitation,rain"
         )
 
         r = requests.get(url, timeout=10)
+
         data = r.json()
 
         current = data["current"]
@@ -100,7 +131,7 @@ def get_weather_blantyre():
         precip = current.get("precipitation", 0)
 
         return (
-            f"Current weather in Blantyre:\n"
+            f"Current weather in {location.title()}:\n"
             f"Temperature: {temp}°C\n"
             f"Rain: {rain} mm\n"
             f"Precipitation: {precip} mm"
@@ -136,24 +167,32 @@ def get_ai_response(message: str):
 
         if any(word in lower for word in weather_keywords):
 
-            weather_data = get_weather_blantyre()
+           district_found = "blantyre"
 
+for district in DISTRICTS.keys():
+    if district in lower:
+        district_found = district
+        break
+
+weather_data = get_weather(district_found)
             prompt = f"""
 You are Voogle Climate AI for Malawi.
 
-Live weather data:
+prompt = f"""
+You are Voogle Climate AI for Malawi.
+
+Weather Data:
 
 {weather_data}
 
-User question:
+User Question:
 {message}
 
-Answer in simple SMS format.
-
 Rules:
-- Maximum 4 short sentences.
+- Maximum 4 short SMS-friendly sentences.
 - Use the weather data above.
 - Give practical advice.
+- Mention the district.
 - If flood risk cannot be determined, say so.
 """
 
