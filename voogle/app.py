@@ -296,59 +296,77 @@ def ask():
 
     return get_ai_response(text)
 # ── Routes ────────────────────────────────────────────────────────────────────
+
 @app.route("/sms", methods=["POST"])
 def receive_sms():
-    """Africa's Talking inbound SMS webhook."""
-    sender       = request.form.get("from", "").strip()
-    message_text = request.form.get("text", "").strip()
 
-    log.info("Inbound SMS — from=%s  text=%r", sender, message_text)
+    # Log everything arriving from SMS Forwarder
+    log.info("FORM DATA: %s", dict(request.form))
+    log.info("JSON DATA: %s", request.get_json(silent=True))
 
-    if not sender or not message_text:
-        return "Missing sender or message.", 400
+    # Handle JSON payload
+    data = request.get_json(silent=True) or {}
 
-    # 1. Generate AI response
+    sender = (
+        data.get("from")
+        or data.get("number")
+        or data.get("sender")
+        or request.form.get("from", "")
+    ).strip()
+
+    message_text = (
+        data.get("text")
+        or data.get("message")
+        or data.get("msg")
+        or request.form.get("text", "")
+    ).strip()
+
+    log.info(
+        "Inbound SMS — from=%s text=%r",
+        sender,
+        message_text
+    )
+
+    if not message_text:
+        return "Missing message.", 400
+
+    # Generate AI response
     ai_response = get_ai_response(message_text)
-    log.info("AI response generated — to=%s  response=%r", sender, ai_response)
 
-    # 2. Send reply via Africa's Talking
-    sms_result = send_sms(recipient=sender, message=ai_response)
-    if sms_result["success"]:
-        log.info("SMS delivered successfully to %s", sender)
-    else:
-        log.error("SMS delivery failed to %s: %s", sender, sms_result.get("error") or sms_result.get("status"))
+    # Only send SMS back if sender exists
+    if sender:
+        sms_result = send_sms(
+            recipient=sender,
+            message=ai_response
+        )
 
-    # 3. Save to database regardless of SMS delivery outcome
-    timestamp = datetime.datetime.now().isoformat(sep=" ", timespec="seconds")
+        if sms_result["success"]:
+            log.info(
+                "SMS delivered successfully to %s",
+                sender
+            )
+        else:
+            log.error(
+                "SMS delivery failed to %s: %s",
+                sender,
+                sms_result.get("error")
+                or sms_result.get("status")
+            )
+
+    # Save query
+    timestamp = datetime.datetime.now().isoformat(
+        sep=" ",
+        timespec="seconds"
+    )
+
     save_query(
-        phone_number=sender,
+        phone_number=sender or "UNKNOWN",
         user_query=message_text,
         gemini_response=ai_response,
         timestamp=timestamp,
     )
 
-    # AT webhook expects a 200 plain-text acknowledgement
-    return "OK", 200, {"Content-Type": "text/plain"}
-
-
-@app.route("/sms", methods=["POST"])
-def receive_sms():
-
-    log.info("FORM DATA: %s", dict(request.form))
-    log.info("JSON DATA: %s", request.get_json(silent=True))
-
     return "OK", 200
-
-    if not recipient:
-        return jsonify({
-            "error": "Provide ?to=+265XXXXXXXXX",
-            "example": "/testsms?to=+265982838730&msg=Hello+Voogle"
-        }), 400
-
-    log.info("Test SMS — to=%s  msg=%r", recipient, message)
-    result = send_sms(recipient=recipient, message=message)
-    return jsonify(result)
-
 
 @app.route("/admin")
 def admin_dashboard():
