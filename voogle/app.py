@@ -331,14 +331,13 @@ def receive_sms():
     return "OK", 200, {"Content-Type": "text/plain"}
 
 
-@app.route("/testsms")
-def test_sms():
-    """
-    Test outbound SMS independently.
-    Usage: GET /testsms?to=+265XXXXXXXXX&msg=Hello
-    """
-    recipient = request.args.get("to", "").strip()
-    message   = request.args.get("msg", "Voogle test message — outbound SMS is working!").strip()
+@app.route("/sms", methods=["POST"])
+def receive_sms():
+
+    log.info("FORM DATA: %s", dict(request.form))
+    log.info("JSON DATA: %s", request.get_json(silent=True))
+
+    return "OK", 200
 
     if not recipient:
         return jsonify({
