@@ -310,16 +310,34 @@ def receive_sms():
     sender = ""
     message_text = ""
 
+    # --------------------------------------------------
+    # SMS Gateway API format
+    # --------------------------------------------------
+    if "number" in data and "message" in data:
+
+        sender = str(data.get("number", "")).strip()
+        message_text = str(data.get("message", "")).strip()
+
+    # --------------------------------------------------
     # SMSMobileAPI webhook format
-    if data.get("event") == "message.inbound":
+    # --------------------------------------------------
+    elif data.get("event") == "message.inbound":
 
         sms_data = data.get("data", {})
 
-        sender = sms_data.get("from", "").strip()
-        message_text = sms_data.get("body", "").strip()
+        sender = str(
+            sms_data.get("from", "")
+        ).strip()
 
+        message_text = str(
+            sms_data.get("body", "")
+        ).strip()
+
+    # --------------------------------------------------
+    # Legacy SMS Forwarder format
+    # --------------------------------------------------
     else:
-        # Legacy SMS Forwarder support
+
         raw_text = data.get("key", "")
 
         match = re.search(
@@ -329,6 +347,7 @@ def receive_sms():
         )
 
         if match:
+
             sender = match.group(1).strip()
             message_text = match.group(2).strip()
 
@@ -339,19 +358,27 @@ def receive_sms():
     )
 
     if not message_text:
+
         return jsonify({
             "reply": "Sorry, I could not read your message."
         }), 200
 
     try:
 
-        log.info("STEP 1: About to call Gemini")
+        log.info(
+            "STEP 1: About to call Gemini"
+        )
 
-        ai_response = get_ai_response(message_text)
+        ai_response = get_ai_response(
+            message_text
+        )
 
-        log.info("STEP 2: Gemini returned")
+        log.info(
+            "STEP 2: Gemini returned"
+        )
 
         if not ai_response:
+
             ai_response = (
                 "Sorry, I could not generate a response right now."
             )
@@ -361,7 +388,9 @@ def receive_sms():
             ai_response
         )
 
+        # ----------------------------------------------
         # Save to database
+        # ----------------------------------------------
         timestamp = datetime.datetime.now().isoformat(
             sep=" ",
             timespec="seconds"
@@ -378,7 +407,9 @@ def receive_sms():
             "STEP 3: Saved query to database"
         )
 
-        # Send SMS reply back to user
+        # ----------------------------------------------
+        # Send SMS reply
+        # ----------------------------------------------
         if sender:
 
             sms_result = send_sms(
@@ -405,7 +436,6 @@ def receive_sms():
         return jsonify({
             "reply": f"System error: {str(e)}"
         }), 200
-
 @app.route("/admin")
 def admin_dashboard():
     queries = get_all_queries()
