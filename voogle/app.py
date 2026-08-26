@@ -230,7 +230,7 @@ def send_sms(recipient: str, message: str) -> dict:
     import os
     import requests
 
-    sms_api_key = os.getenv("SMS_API_KEY")
+    sms_api_key = os.getenv("SMS_API_KEY", "").strip()
 
     if not sms_api_key:
         return {
@@ -245,9 +245,14 @@ def send_sms(recipient: str, message: str) -> dict:
         "message": message
     }
 
-    log.info("SMSMobileAPI request payload: %s", payload)
+    log.info(
+        "Sending SMS to %s (%s chars)",
+        recipient,
+        len(message)
+    )
 
     try:
+
         response = requests.get(
             "https://api.smsmobileapi.com/sendsms/",
             params=payload,
@@ -258,13 +263,25 @@ def send_sms(recipient: str, message: str) -> dict:
 
         data = response.json()
 
-        log.info("SMSMobileAPI response: %s", data)
+        log.info(
+            "SMSMobileAPI response: %s",
+            data
+        )
 
         result = data.get("result", {})
 
-        error_code = str(result.get("error", "1"))
-        sent = str(result.get("sent", "0"))
-        status = result.get("note", "Unknown")
+        error_code = str(
+            result.get("error", "1")
+        )
+
+        sent = str(
+            result.get("sent", "0")
+        )
+
+        status = result.get(
+            "note",
+            result.get("sent", "Unknown")
+        )
 
         success = (
             error_code == "0"
@@ -278,7 +295,10 @@ def send_sms(recipient: str, message: str) -> dict:
         }
 
     except Exception as e:
-        log.error("SMSMobileAPI send failed: %s", e)
+
+        log.exception(
+            "SMSMobileAPI send failed"
+        )
 
         return {
             "success": False,
