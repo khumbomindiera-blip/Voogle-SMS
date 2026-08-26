@@ -224,64 +224,61 @@ Rules:
 
 def send_sms(recipient: str, message: str) -> dict:
     """
-    Send an SMS via Africa's Talking and return a result dict.
+    Send an SMS via SMSMobileAPI and return a result dict.
     """
 
-    if at_sms is None:
+    import os
+    import requests
+
+    sms_api_key = os.getenv("SMS_API_KEY")
+
+    if not sms_api_key:
         return {
             "success": False,
             "status": "disabled",
-            "error": "Africa's Talking not configured"
+            "error": "SMSMobileAPI key not configured"
         }
 
     payload = {
-        "to": recipient,
-        "message": message,
-        "sender_id": AT_SENDER_ID or None,
+        "apikey": sms_api_key,
+        "recipients": recipient,
+        "message": message
     }
 
-    log.info("AT SMS request payload: %s", payload)
+    log.info("SMSMobileAPI request payload: %s", payload)
 
     try:
-        response = at_sms.send(
-            message=message,
-            recipients=[recipient],
-            **({"sender_id": AT_SENDER_ID} if AT_SENDER_ID else {})
+        response = requests.get(
+            "https://api.smsmobileapi.com/sendsms/",
+            params=payload,
+            timeout=30
         )
 
-        log.info("AT SMS API response: %s", response)
+        response.raise_for_status()
 
-        recipients_data = response.get(
-            "SMSMessageData", {}
-        ).get("Recipients", [])
+        data = response.json()
 
-        if recipients_data:
-            status = recipients_data[0].get("status", "Unknown")
-            cost = recipients_data[0].get("cost", "Unknown")
+        log.info("SMSMobileAPI response: %s", data)
 
-            log.info(
-                "AT delivery status=%s cost=%s",
-                status,
-                cost
-            )
+        result = data.get("result", {})
 
-            success = status in ("Success", "Sent")
+        error_code = str(result.get("error", "1"))
+        sent = str(result.get("sent", "0"))
+        status = result.get("note", "Unknown")
 
-        else:
-            status = response.get(
-                "SMSMessageData", {}
-            ).get("Message", "Unknown")
-
-            success = False
+        success = (
+            error_code == "0"
+            and sent == "1"
+        )
 
         return {
             "success": success,
             "status": status,
-            "raw": response
+            "raw": data
         }
 
     except Exception as e:
-        log.error("AT SMS send failed: %s", e)
+        log.error("SMSMobileAPI send failed: %s", e)
 
         return {
             "success": False,
@@ -306,28 +303,34 @@ from flask import jsonify
 @app.route("/sms", methods=["POST"])
 def receive_sms():
 
-    # Read JSON from SMS Forwarder
     data = request.get_json(silent=True) or {}
 
     log.info("RAW JSON: %s", data)
 
-    raw_text = data.get("key", "")
-
     sender = ""
     message_text = ""
 
-    # Parse SMS Forwarder format:
-    # From : +265990776617()
-    # Hello
-    match = re.search(
-        r"From\s*:\s*(\+?\d+).*?\n(.*)",
-        raw_text,
-        re.DOTALL
-    )
+    # SMSMobileAPI webhook format
+    if data.get("event") == "message.inbound":
 
-    if match:
-        sender = match.group(1).strip()
-        message_text = match.group(2).strip()
+        sms_data = data.get("data", {})
+
+        sender = sms_data.get("from", "").strip()
+        message_text = sms_data.get("body", "").strip()
+
+    else:
+        # Legacy SMS Forwarder support
+        raw_text = data.get("key", "")
+
+        match = re.search(
+            r"From\s*:\s*(\+?\d+).*?\n(.*)",
+            raw_text,
+            re.DOTALL
+        )
+
+        if match:
+            sender = match.group(1).strip()
+            message_text = match.group(2).strip()
 
     log.info(
         "Inbound SMS — from=%s text=%r",
@@ -375,8 +378,21 @@ def receive_sms():
             "STEP 3: Saved query to database"
         )
 
-        # Return response to SMS Forwarder
+        # Send SMS reply back to user
+        if sender:
+
+            sms_result = send_sms(
+                recipient=sender,
+                message=ai_response
+            )
+
+            log.info(
+                "STEP 4: SMS send result => %s",
+                sms_result
+            )
+
         return jsonify({
+            "status": "success",
             "reply": ai_response
         }), 200
 
