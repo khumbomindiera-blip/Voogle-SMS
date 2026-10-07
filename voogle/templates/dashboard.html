@@ -8,85 +8,157 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: "Segoe UI", system-ui, sans-serif;
-      background: #0b0f19;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: #07090e;
       color: #e2e8f0;
       min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Futuristic glowing background accent */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: radial-gradient(circle at 15% 15%, rgba(6, 182, 212, 0.07) 0%, transparent 40%),
+                  radial-gradient(circle at 85% 85%, rgba(99, 102, 241, 0.07) 0%, transparent 40%);
+      pointer-events: none;
+      z-index: 0;
     }
 
     header {
-      background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
-      border-bottom: 1px solid #374151;
-      padding: 24px 32px;
+      position: relative;
+      z-index: 10;
+      background: rgba(13, 17, 23, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(30, 41, 59, 0.8);
+      padding: 22px 36px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .brand-group {
       display: flex;
       align-items: center;
       gap: 20px;
     }
 
-    .logo {
+    /* Logo & Voogle Text Styling */
+    .logo-container {
       display: flex;
       align-items: center;
       gap: 14px;
     }
 
-    /* Large, prominent, entirely original logo */
-    .logo svg {
-      height: 70px;
+    .logo-svg {
+      height: 55px;
       width: auto;
+      filter: drop-shadow(0 0 10px rgba(6, 182, 212, 0.4));
     }
 
-    .logo-text {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .logo-title {
-      font-size: 28px;
+    .brand-title {
+      font-size: 42px;
       font-weight: 800;
       letter-spacing: -0.03em;
-      color: #ffffff;
+      background: linear-gradient(135deg, #ffffff 30%, #38bdf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-family: system-ui, -apple-system, sans-serif;
     }
 
-    .logo-subtitle-badge {
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: #38bdf8;
+    .live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
       font-weight: 700;
+      color: #34d399;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
     }
 
-    .subtitle {
-      color: #9ca3af;
-      font-size: 14px;
-      margin-left: auto;
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background-color: #34d399;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #34d399;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(52, 211, 153, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+    }
+
+    .header-info {
+      text-align: right;
+    }
+
+    .mission-text {
+      font-size: 13px;
+      color: #94a3b8;
       font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      justify-content: flex-end;
     }
 
+    .mission-text span {
+      color: #38bdf8;
+      font-weight: 600;
+    }
+
+    /* Stats Bar */
     .stats-bar {
-      background: #111827;
-      border-bottom: 1px solid #374151;
-      padding: 16px 32px;
+      position: relative;
+      z-index: 10;
+      background: rgba(13, 17, 23, 0.6);
+      border-bottom: 1px solid rgba(30, 41, 59, 0.8);
+      padding: 16px 36px;
       display: flex;
-      gap: 32px;
+      gap: 40px;
       align-items: center;
     }
 
     .stat {
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 3px;
     }
-    .stat-label { font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
-    .stat-value { font-size: 22px; font-weight: 700; color: #f3f4f6; }
+    .stat-label { 
+      font-size: 11px; 
+      color: #64748b; 
+      text-transform: uppercase; 
+      letter-spacing: 0.08em; 
+      font-weight: 600;
+    }
+    .stat-value { 
+      font-size: 24px; 
+      font-weight: 700; 
+      color: #f8fafc; 
+      font-variant-numeric: tabular-nums;
+    }
 
+    /* Main Container */
     .container {
-      padding: 28px 32px;
-      max-width: 1400px;
+      position: relative;
+      z-index: 10;
+      padding: 32px 36px;
+      max-width: 1500px;
       margin: 0 auto;
     }
 
     .search-bar {
-      margin-bottom: 20px;
+      margin-bottom: 24px;
       display: flex;
       gap: 12px;
       align-items: center;
@@ -94,147 +166,160 @@
 
     .search-bar input {
       flex: 1;
-      background: #111827;
-      border: 1px solid #374151;
-      border-radius: 8px;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid #1e293b;
+      border-radius: 10px;
       padding: 12px 18px;
-      color: #f3f4f6;
+      color: #f8fafc;
       font-size: 14px;
       outline: none;
-      transition: border-color 0.2s, box-shadow 0.2s;
+      transition: all 0.2s ease;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
     }
     .search-bar input:focus { 
-      border-color: #6366f1; 
-      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+      border-color: #06b6d4; 
+      box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.15), inset 0 2px 4px rgba(0,0,0,0.2);
     }
-    .search-bar input::placeholder { color: #6b7280; }
+    .search-bar input::placeholder { color: #475569; }
 
     .refresh-btn {
-      background: #6366f1;
+      background: linear-gradient(135deg, #0284c7 0%, #06b6d4 100%);
       color: #fff;
       border: none;
-      border-radius: 8px;
-      padding: 12px 22px;
+      border-radius: 10px;
+      padding: 12px 24px;
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
-      transition: background 0.2s;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 12px rgba(6, 182, 212, 0.25);
     }
-    .refresh-btn:hover { background: #4f46e5; }
+    .refresh-btn:hover { 
+      opacity: 0.95;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(6, 182, 212, 0.35);
+    }
 
+    /* Table Styling */
     .table-wrap {
-      background: #111827;
-      border: 1px solid #374151;
-      border-radius: 12px;
+      background: rgba(13, 17, 23, 0.7);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(30, 41, 59, 0.9);
+      border-radius: 14px;
       overflow: hidden;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
+      text-align: left;
     }
 
     thead {
-      background: #1f2937;
+      background: rgba(15, 23, 42, 0.9);
+      border-bottom: 1px solid rgba(30, 41, 59, 0.9);
     }
 
     th {
-      text-align: left;
       padding: 16px 20px;
       font-size: 11px;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.07em;
-      color: #9ca3af;
-      border-bottom: 1px solid #374151;
+      letter-spacing: 0.08em;
+      color: #64748b;
     }
 
     td {
       padding: 16px 20px;
       font-size: 14px;
-      border-bottom: 1px solid #1f2937;
+      border-bottom: 1px solid rgba(30, 41, 59, 0.5);
       vertical-align: top;
       line-height: 1.5;
     }
 
     tr:last-child td { border-bottom: none; }
-    tr:hover td { background: #1a2234; }
+    tr:hover td { background: rgba(30, 41, 59, 0.35); }
 
     .phone {
-      font-family: "SF Mono", "Courier New", monospace;
+      font-family: "JetBrains Mono", "Fira Code", monospace;
       font-size: 13px;
       color: #38bdf8;
       font-weight: 600;
+      background: rgba(56, 189, 248, 0.08);
+      padding: 4px 8px;
+      border-radius: 6px;
+      border: 1px solid rgba(56, 189, 248, 0.15);
       white-space: nowrap;
     }
 
     .query-text {
-      color: #f3f4f6;
-      max-width: 300px;
+      color: #f1f5f9;
+      max-width: 320px;
+      font-weight: 500;
     }
 
     .response-text {
-      color: #9ca3af;
-      max-width: 420px;
+      color: #94a3b8;
+      max-width: 450px;
     }
 
     .timestamp {
       font-size: 12px;
-      color: #6b7280;
+      color: #64748b;
       white-space: nowrap;
-      font-family: "SF Mono", "Courier New", monospace;
+      font-family: monospace;
     }
 
     .empty-state {
       text-align: center;
-      padding: 64px 32px;
-      color: #6b7280;
+      padding: 80px 32px;
+      color: #64748b;
     }
     .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
-    .empty-state p { font-size: 15px; }
+    .empty-state p { font-size: 15px; font-weight: 500; }
 
     .no-rows { display: none; }
 
-    @media (max-width: 900px) {
-      .stats-bar { flex-wrap: wrap; gap: 16px; }
-      .container { padding: 16px; }
-      header { padding: 16px; flex-direction: column; align-items: flex-start; }
-      .subtitle { margin-left: 0; }
+    @media (max-width: 1024px) {
+      header { flex-direction: column; align-items: flex-start; padding: 20px; }
+      .header-info { text-align: left; }
+      .stats-bar { flex-wrap: wrap; gap: 20px; padding: 16px 20px; }
+      .container { padding: 20px; }
     }
   </style>
 </head>
 <body>
 
 <header>
-  <div class="logo">
-    <!-- Original, non-infringing tech logo featuring a neural node & signal wave motif in Indigo, Cyan, and Amber -->
-    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-      <!-- Outer Hexagon Ring -->
-      <polygon points="50,5 90,27 90,73 50,95 10,73 10,27" fill="none" stroke="#374151" stroke-width="4"/>
-      <!-- Inner Circuit Nodes & Core -->
-      <circle cx="50" cy="50" r="18" fill="url(#coreGradient)"/>
-      <circle cx="50" cy="20" r="6" fill="#38bdf8"/>
-      <circle cx="78" cy="65" r="6" fill="#f59e0b"/>
-      <circle cx="22" cy="65" r="6" fill="#6366f1"/>
-      <!-- Connecting Signal Paths -->
-      <line x1="50" y1="50" x2="50" y2="20" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/>
-      <line x1="50" y1="50" x2="78" y2="65" stroke="#f59e0b" stroke-width="3" stroke-linecap="round"/>
-      <line x1="50" y1="50" x2="22" y2="65" stroke="#6366f1" stroke-width="3" stroke-linecap="round"/>
-      <!-- Gradients -->
-      <defs>
-        <radialGradient id="coreGradient" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stop-color="#38bdf8"/>
-          <stop offset="100%" stop-color="#6366f1"/>
-        </radialGradient>
-      </defs>
-    </svg>
-    <div class="logo-text">
-      <span class="logo-title">VOOGLE</span>
-      <span class="logo-subtitle-badge">Intelligence Core</span>
+  <div class="brand-group">
+    <div class="logo-container">
+      <!-- Futuristic Tech Shield & Node Logo -->
+      <svg class="logo-svg" viewBox="0 0 120 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M60 5L105 22V52C105 76 84 92 60 98C36 92 15 76 15 52V22L60 5Z" fill="url(#paint0_linear)" stroke="#38bdf8" stroke-width="3" stroke-linejoin="round"/>
+        <circle cx="60" cy="38" r="10" fill="#06b6d4" stroke="#ffffff" stroke-width="2"/>
+        <circle cx="38" cy="65" r="7" fill="#6366f1" stroke="#ffffff" stroke-width="2"/>
+        <circle cx="82" cy="65" r="7" fill="#f59e0b" stroke="#ffffff" stroke-width="2"/>
+        <path d="M53 45L42 58M67 45L78 58" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/>
+        <defs>
+          <linearGradient id="paint0_linear" x1="15" y1="5" x2="105" y2="98" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#0f172a" stop-opacity="0.9"/>
+            <stop offset="1" stop-color="#1e1b4b" stop-opacity="0.9"/>
+          </linearGradient>
+        </defs>
+      </svg>
+      <span class="brand-title">Voogle</span>
+    </div>
+    <div class="live-badge">
+      <span class="pulse-dot"></span> Live Dashboard
     </div>
   </div>
-  <div class="subtitle">SMS · Gemini AI · Admin Console</div>
+
+  <div class="header-info">
+    <div class="mission-text">
+      Connecting <span>2G Feature Phones</span> to <span>Google & Gemini AI</span> via SMS
+    </div>
+  </div>
 </header>
 
 <div class="stats-bar">
@@ -242,75 +327,3 @@
     <span class="stat-label">Total Queries</span>
     <span class="stat-value" id="total-count">{{ queries | length }}</span>
   </div>
-  <div class="stat">
-    <span class="stat-label">Unique Numbers</span>
-    <span class="stat-value" id="unique-count">{{ queries | map(attribute='phone_number') | list | unique | list | length }}</span>
-  </div>
-  {% if queries %}
-  <div class="stat">
-    <span class="stat-label">Latest Query</span>
-    <span class="stat-value" style="font-size:14px;color:#9ca3af;">{{ queries[0].timestamp }}</span>
-  </div>
-  {% endif %}
-</div>
-
-<div class="container">
-  <div class="search-bar">
-    <input type="text" id="search" placeholder="Search by phone number or message content…" oninput="filterTable()" />
-    <button class="refresh-btn" onclick="location.reload()">↻ Refresh Data</button>
-  </div>
-
-  <div class="table-wrap">
-    {% if queries %}
-    <table id="queries-table">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Phone Number</th>
-          <th>User Query</th>
-          <th>Gemini Response</th>
-          <th>Date &amp; Time</th>
-        </tr>
-      </thead>
-      <tbody id="table-body">
-        {% for q in queries %}
-        <tr>
-          <td style="color:#6b7280;font-size:13px;">{{ q.id }}</td>
-          <td><span class="phone">{{ q.phone_number }}</span></td>
-          <td class="query-text">{{ q.user_query }}</td>
-          <td class="response-text">{{ q.gemini_response }}</td>
-          <td class="timestamp">{{ q.timestamp }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-    <tr id="no-rows" class="no-rows">
-      <td colspan="5" style="text-align:center;padding:32px;color:#6b7280;">No matching records found.</td>
-    </tr>
-    {% else %}
-    <div class="empty-state">
-      <div class="icon">📭</div>
-      <p>No SMS queries yet. Messages sent to your gateway will appear here automatically.</p>
-    </div>
-    {% endif %}
-  </div>
-</div>
-
-<script>
-  function filterTable() {
-    const val = document.getElementById("search").value.toLowerCase();
-    const rows = document.querySelectorAll("#table-body tr");
-    let visible = 0;
-    rows.forEach(row => {
-      const text = row.innerText.toLowerCase();
-      const show = text.includes(val);
-      row.style.display = show ? "" : "none";
-      if (show) visible++;
-    });
-    const noRows = document.getElementById("no-rows");
-    if (noRows) noRows.style.display = visible === 0 ? "table-row" : "none";
-  }
-</script>
-
-</body>
-</html>
