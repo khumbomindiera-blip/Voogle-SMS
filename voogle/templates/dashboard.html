@@ -183,7 +183,7 @@
 
 <header>
   <div class="logo">
-    <img src="logoVoogle.png" alt="Voogle Logo" />
+    <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA...[embedded logo data]..." alt="Voogle Logo" />
   </div>
   <div class="subtitle">SMS · Gemini · Intelligence</div>
 </header>
@@ -249,4 +249,19 @@
 
 <script>
   function filterTable() {
-    const val = document.
+    const val = document.getElementById("search").value.toLowerCase();
+    const rows = document.querySelectorAll("#table-body tr");
+    let visible = 0;
+    rows.forEach(row => {
+      const text = row.innerText.toLowerCase();
+      const show = text.includes(val);
+      row.style.display = show ? "" : "none";
+      if (show) visible++;
+    });
+    const noRows = document.getElementById("no-rows");
+    if (noRows) noRows.style.display = visible === 0 ? "table-row" : "none";
+  }
+</script>
+
+</body>
+</html>
