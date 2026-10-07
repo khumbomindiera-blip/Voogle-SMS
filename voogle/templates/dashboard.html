@@ -17,28 +17,28 @@
     header {
       background: linear-gradient(135deg, #1a1d2e 0%, #16213e 100%);
       border-bottom: 1px solid #2d3748;
-      padding: 20px 32px;
+      padding: 24px 32px;
       display: flex;
       align-items: center;
       gap: 16px;
     }
 
     .logo {
-      font-size: 28px;
-      font-weight: 800;
-      letter-spacing: -1px;
+      display: flex;
+      align-items: center;
     }
-    .logo span.v { color: #4285f4; }
-    .logo span.o1 { color: #ea4335; }
-    .logo span.o2 { color: #fbbc04; }
-    .logo span.g { color: #4285f4; }
-    .logo span.l { color: #34a853; }
-    .logo span.e { color: #ea4335; }
+
+    .logo img {
+      height: 85px; /* Large size so it's easily visible from afar */
+      width: auto;
+      object-fit: contain;
+    }
 
     .subtitle {
       color: #718096;
-      font-size: 13px;
+      font-size: 14px;
       margin-left: auto;
+      font-weight: 500;
     }
 
     .stats-bar {
@@ -160,17 +160,6 @@
       font-family: "SF Mono", "Courier New", monospace;
     }
 
-    .badge {
-      display: inline-block;
-      background: #1c3a6b;
-      color: #63b3ed;
-      font-size: 11px;
-      font-weight: 600;
-      padding: 2px 8px;
-      border-radius: 4px;
-      margin-bottom: 4px;
-    }
-
     .empty-state {
       text-align: center;
       padding: 64px 32px;
@@ -184,8 +173,9 @@
     @media (max-width: 900px) {
       .stats-bar { flex-wrap: wrap; gap: 16px; }
       .container { padding: 16px; }
-      header { padding: 16px; }
-      .query-text, .response-text { max-width: 180px; }
+      header { padding: 16px; flex-direction: column; align-items: flex-start; }
+      .subtitle { margin-left: 0; }
+      .logo img { height: 60px; }
     }
   </style>
 </head>
@@ -193,7 +183,7 @@
 
 <header>
   <div class="logo">
-    <span class="v">V</span><span class="o1">o</span><span class="o2">o</span><span class="g">g</span><span class="l">l</span><span class="e">e</span>
+    <img src="logoVoogle.png" alt="Voogle Logo" />
   </div>
   <div class="subtitle">SMS · Gemini · Intelligence</div>
 </header>
@@ -259,19 +249,4 @@
 
 <script>
   function filterTable() {
-    const val = document.getElementById("search").value.toLowerCase();
-    const rows = document.querySelectorAll("#table-body tr");
-    let visible = 0;
-    rows.forEach(row => {
-      const text = row.innerText.toLowerCase();
-      const show = text.includes(val);
-      row.style.display = show ? "" : "none";
-      if (show) visible++;
-    });
-    const noRows = document.getElementById("no-rows");
-    if (noRows) noRows.style.display = visible === 0 ? "table-row" : "none";
-  }
-</script>
-
-</body>
-</html>
+    const val = document.
