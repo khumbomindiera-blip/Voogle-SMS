@@ -28,17 +28,18 @@
       align-items: center;
     }
 
-    /* Controls the large size of your logo so it's easily visible */
+    /* MASSIVE size so it's super visible from afar */
     .logo svg {
-      height: 75px;
+      height: 130px;
       width: auto;
     }
 
     .subtitle {
-      color: #718096;
-      font-size: 14px;
+      color: #63b3ed;
+      font-size: 15px;
       margin-left: auto;
-      font-weight: 500;
+      font-weight: 700;
+      letter-spacing: 0.05em;
     }
 
     .stats-bar {
@@ -175,7 +176,7 @@
       .container { padding: 16px; }
       header { padding: 16px; flex-direction: column; align-items: flex-start; }
       .subtitle { margin-left: 0; }
-      .logo svg { height: 55px; }
+      .logo svg { height: 80px; }
     }
   </style>
 </head>
@@ -183,8 +184,8 @@
 
 <header>
   <div class="logo">
-    <!-- Embedded Voogle Logo (Hut icon + Google colored letters)[cite: 1] -->
-    <svg viewBox="0 0 450 140" xmlns="http://www.w3.org/2000/svg">
+    <!-- Extra Large Voogle Logo -->
+    <svg viewBox="0 0 540 140" xmlns="http://www.w3.org/2000/svg">
       <!-- Sun -->
       <circle cx="110" cy="30" r="14" fill="#fbbc04"/>
       <!-- Roof -->
@@ -208,7 +209,7 @@
       </text>
     </svg>
   </div>
-  <div class="subtitle">SMS · Gemini · Intelligence</div>
+  <div class="subtitle">🚀 LIVE VOOGLE ADMIN DASHBOARD</div>
 </header>
 
 <div class="stats-bar">
@@ -271,6 +272,9 @@
 </div>
 
 <script>
+  function filterTest() {
+    // placeholder
+  }
   function filterTable() {
     const val = document.getElementById("search").value.toLowerCase();
     const rows = document.querySelectorAll("#table-body tr");
