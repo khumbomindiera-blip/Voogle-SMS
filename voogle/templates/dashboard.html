@@ -28,10 +28,10 @@
       align-items: center;
     }
 
-    .logo img {
-      height: 85px; /* Large size so it's easily visible from afar */
+    /* Controls the large size of your logo so it's easily visible */
+    .logo svg {
+      height: 75px;
       width: auto;
-      object-fit: contain;
     }
 
     .subtitle {
@@ -175,7 +175,7 @@
       .container { padding: 16px; }
       header { padding: 16px; flex-direction: column; align-items: flex-start; }
       .subtitle { margin-left: 0; }
-      .logo img { height: 60px; }
+      .logo svg { height: 55px; }
     }
   </style>
 </head>
@@ -183,7 +183,30 @@
 
 <header>
   <div class="logo">
-    <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA...[embedded logo data]..." alt="Voogle Logo" />
+    <!-- Embedded Voogle Logo (Hut icon + Google colored letters)[cite: 1] -->
+    <svg viewBox="0 0 450 140" xmlns="http://www.w3.org/2000/svg">
+      <!-- Sun -->
+      <circle cx="110" cy="30" r="14" fill="#fbbc04"/>
+      <!-- Roof -->
+      <path d="M 20 55 Q 80 35 150 55 L 140 75 Q 80 50 30 75 Z" fill="#6d4c41"/>
+      <path d="M 25 45 L 35 75 M 45 42 L 52 75 M 65 39 L 70 75 M 85 38 L 87 75 M 105 38 L 104 75 M 125 39 L 121 75 M 140 42 L 135 75" stroke="#5d4037" stroke-width="2"/>
+      <!-- House Body / Base -->
+      <path d="M 32 75 L 138 75 L 125 110 L 45 110 Z" fill="#4caf50"/>
+      <!-- Door -->
+      <path d="M 75 110 L 75 90 A 12 12 0 0 1 99 90 L 99 110 Z" fill="#5d4037"/>
+      <path d="M 83 110 L 83 96 A 4 4 0 0 1 91 96 L 91 110 Z" fill="#fbbc04"/>
+      <!-- Platform / Ground -->
+      <ellipse cx="85" cy="116" rx="65" ry="5" fill="#4caf50"/>
+
+      <!-- Text: oogle -->
+      <text x="170" y="98" font-family="Arial, sans-serif" font-weight="bold" font-size="82">
+        <tspan fill="#ea4335">o</tspan>
+        <tspan fill="#fbbc04">o</tspan>
+        <tspan fill="#4285f4">g</tspan>
+        <tspan fill="#34a853">l</tspan>
+        <tspan fill="#ea4335">e</tspan>
+      </text>
+    </svg>
   </div>
   <div class="subtitle">SMS · Gemini · Intelligence</div>
 </header>
