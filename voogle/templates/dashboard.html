@@ -9,43 +9,63 @@
 
     body {
       font-family: "Segoe UI", system-ui, sans-serif;
-      background: #0f1117;
+      background: #0b0f19;
       color: #e2e8f0;
       min-height: 100vh;
     }
 
     header {
-      background: linear-gradient(135deg, #1a1d2e 0%, #16213e 100%);
-      border-bottom: 1px solid #2d3748;
+      background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
+      border-bottom: 1px solid #374151;
       padding: 24px 32px;
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 20px;
     }
 
     .logo {
       display: flex;
       align-items: center;
+      gap: 14px;
     }
 
-    /* MASSIVE size so it's super visible from afar */
+    /* Large, prominent, entirely original logo */
     .logo svg {
-      height: 130px;
+      height: 70px;
       width: auto;
     }
 
-    .subtitle {
-      color: #63b3ed;
-      font-size: 15px;
-      margin-left: auto;
+    .logo-text {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .logo-title {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: #ffffff;
+    }
+
+    .logo-subtitle-badge {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #38bdf8;
       font-weight: 700;
-      letter-spacing: 0.05em;
+    }
+
+    .subtitle {
+      color: #9ca3af;
+      font-size: 14px;
+      margin-left: auto;
+      font-weight: 500;
     }
 
     .stats-bar {
-      background: #1a1d2e;
-      border-bottom: 1px solid #2d3748;
-      padding: 14px 32px;
+      background: #111827;
+      border-bottom: 1px solid #374151;
+      padding: 16px 32px;
       display: flex;
       gap: 32px;
       align-items: center;
@@ -56,8 +76,8 @@
       flex-direction: column;
       gap: 2px;
     }
-    .stat-label { font-size: 11px; color: #718096; text-transform: uppercase; letter-spacing: 0.05em; }
-    .stat-value { font-size: 22px; font-weight: 700; color: #e2e8f0; }
+    .stat-label { font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+    .stat-value { font-size: 22px; font-weight: 700; color: #f3f4f6; }
 
     .container {
       padding: 28px 32px;
@@ -68,42 +88,46 @@
     .search-bar {
       margin-bottom: 20px;
       display: flex;
-      gap: 10px;
+      gap: 12px;
       align-items: center;
     }
 
     .search-bar input {
       flex: 1;
-      background: #1a1d2e;
-      border: 1px solid #2d3748;
+      background: #111827;
+      border: 1px solid #374151;
       border-radius: 8px;
-      padding: 10px 16px;
-      color: #e2e8f0;
+      padding: 12px 18px;
+      color: #f3f4f6;
       font-size: 14px;
       outline: none;
-      transition: border-color 0.2s;
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
-    .search-bar input:focus { border-color: #4285f4; }
-    .search-bar input::placeholder { color: #4a5568; }
+    .search-bar input:focus { 
+      border-color: #6366f1; 
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+    }
+    .search-bar input::placeholder { color: #6b7280; }
 
     .refresh-btn {
-      background: #4285f4;
+      background: #6366f1;
       color: #fff;
       border: none;
       border-radius: 8px;
-      padding: 10px 20px;
+      padding: 12px 22px;
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
       transition: background 0.2s;
     }
-    .refresh-btn:hover { background: #3574e3; }
+    .refresh-btn:hover { background: #4f46e5; }
 
     .table-wrap {
-      background: #1a1d2e;
-      border: 1px solid #2d3748;
+      background: #111827;
+      border: 1px solid #374151;
       border-radius: 12px;
       overflow: hidden;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     }
 
     table {
@@ -112,51 +136,52 @@
     }
 
     thead {
-      background: #16213e;
+      background: #1f2937;
     }
 
     th {
       text-align: left;
-      padding: 14px 18px;
+      padding: 16px 20px;
       font-size: 11px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.07em;
-      color: #718096;
-      border-bottom: 1px solid #2d3748;
+      color: #9ca3af;
+      border-bottom: 1px solid #374151;
     }
 
     td {
-      padding: 14px 18px;
+      padding: 16px 20px;
       font-size: 14px;
-      border-bottom: 1px solid #1e2333;
+      border-bottom: 1px solid #1f2937;
       vertical-align: top;
       line-height: 1.5;
     }
 
     tr:last-child td { border-bottom: none; }
-    tr:hover td { background: #1e2740; }
+    tr:hover td { background: #1a2234; }
 
     .phone {
       font-family: "SF Mono", "Courier New", monospace;
       font-size: 13px;
-      color: #63b3ed;
+      color: #38bdf8;
+      font-weight: 600;
       white-space: nowrap;
     }
 
     .query-text {
-      color: #e2e8f0;
+      color: #f3f4f6;
       max-width: 300px;
     }
 
     .response-text {
-      color: #a0aec0;
+      color: #9ca3af;
       max-width: 420px;
     }
 
     .timestamp {
       font-size: 12px;
-      color: #4a5568;
+      color: #6b7280;
       white-space: nowrap;
       font-family: "SF Mono", "Courier New", monospace;
     }
@@ -164,7 +189,7 @@
     .empty-state {
       text-align: center;
       padding: 64px 32px;
-      color: #4a5568;
+      color: #6b7280;
     }
     .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
     .empty-state p { font-size: 15px; }
@@ -176,7 +201,6 @@
       .container { padding: 16px; }
       header { padding: 16px; flex-direction: column; align-items: flex-start; }
       .subtitle { margin-left: 0; }
-      .logo svg { height: 80px; }
     }
   </style>
 </head>
@@ -184,32 +208,33 @@
 
 <header>
   <div class="logo">
-    <!-- Extra Large Voogle Logo -->
-    <svg viewBox="0 0 540 140" xmlns="http://www.w3.org/2000/svg">
-      <!-- Sun -->
-      <circle cx="110" cy="30" r="14" fill="#fbbc04"/>
-      <!-- Roof -->
-      <path d="M 20 55 Q 80 35 150 55 L 140 75 Q 80 50 30 75 Z" fill="#6d4c41"/>
-      <path d="M 25 45 L 35 75 M 45 42 L 52 75 M 65 39 L 70 75 M 85 38 L 87 75 M 105 38 L 104 75 M 125 39 L 121 75 M 140 42 L 135 75" stroke="#5d4037" stroke-width="2"/>
-      <!-- House Body / Base -->
-      <path d="M 32 75 L 138 75 L 125 110 L 45 110 Z" fill="#4caf50"/>
-      <!-- Door -->
-      <path d="M 75 110 L 75 90 A 12 12 0 0 1 99 90 L 99 110 Z" fill="#5d4037"/>
-      <path d="M 83 110 L 83 96 A 4 4 0 0 1 91 96 L 91 110 Z" fill="#fbbc04"/>
-      <!-- Platform / Ground -->
-      <ellipse cx="85" cy="116" rx="65" ry="5" fill="#4caf50"/>
-
-      <!-- Text: oogle -->
-      <text x="170" y="98" font-family="Arial, sans-serif" font-weight="bold" font-size="82">
-        <tspan fill="#ea4335">o</tspan>
-        <tspan fill="#fbbc04">o</tspan>
-        <tspan fill="#4285f4">g</tspan>
-        <tspan fill="#34a853">l</tspan>
-        <tspan fill="#ea4335">e</tspan>
-      </text>
+    <!-- Original, non-infringing tech logo featuring a neural node & signal wave motif in Indigo, Cyan, and Amber -->
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <!-- Outer Hexagon Ring -->
+      <polygon points="50,5 90,27 90,73 50,95 10,73 10,27" fill="none" stroke="#374151" stroke-width="4"/>
+      <!-- Inner Circuit Nodes & Core -->
+      <circle cx="50" cy="50" r="18" fill="url(#coreGradient)"/>
+      <circle cx="50" cy="20" r="6" fill="#38bdf8"/>
+      <circle cx="78" cy="65" r="6" fill="#f59e0b"/>
+      <circle cx="22" cy="65" r="6" fill="#6366f1"/>
+      <!-- Connecting Signal Paths -->
+      <line x1="50" y1="50" x2="50" y2="20" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/>
+      <line x1="50" y1="50" x2="78" y2="65" stroke="#f59e0b" stroke-width="3" stroke-linecap="round"/>
+      <line x1="50" y1="50" x2="22" y2="65" stroke="#6366f1" stroke-width="3" stroke-linecap="round"/>
+      <!-- Gradients -->
+      <defs>
+        <radialGradient id="coreGradient" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#38bdf8"/>
+          <stop offset="100%" stop-color="#6366f1"/>
+        </radialGradient>
+      </defs>
     </svg>
+    <div class="logo-text">
+      <span class="logo-title">VOOGLE</span>
+      <span class="logo-subtitle-badge">Intelligence Core</span>
+    </div>
   </div>
-  <div class="subtitle">🚀 LIVE VOOGLE ADMIN DASHBOARD</div>
+  <div class="subtitle">SMS · Gemini AI · Admin Console</div>
 </header>
 
 <div class="stats-bar">
@@ -224,15 +249,15 @@
   {% if queries %}
   <div class="stat">
     <span class="stat-label">Latest Query</span>
-    <span class="stat-value" style="font-size:14px;color:#718096;">{{ queries[0].timestamp }}</span>
+    <span class="stat-value" style="font-size:14px;color:#9ca3af;">{{ queries[0].timestamp }}</span>
   </div>
   {% endif %}
 </div>
 
 <div class="container">
   <div class="search-bar">
-    <input type="text" id="search" placeholder="Search by phone number or message…" oninput="filterTable()" />
-    <button class="refresh-btn" onclick="location.reload()">↻ Refresh</button>
+    <input type="text" id="search" placeholder="Search by phone number or message content…" oninput="filterTable()" />
+    <button class="refresh-btn" onclick="location.reload()">↻ Refresh Data</button>
   </div>
 
   <div class="table-wrap">
@@ -250,7 +275,7 @@
       <tbody id="table-body">
         {% for q in queries %}
         <tr>
-          <td style="color:#4a5568;font-size:13px;">{{ q.id }}</td>
+          <td style="color:#6b7280;font-size:13px;">{{ q.id }}</td>
           <td><span class="phone">{{ q.phone_number }}</span></td>
           <td class="query-text">{{ q.user_query }}</td>
           <td class="response-text">{{ q.gemini_response }}</td>
@@ -260,21 +285,18 @@
       </tbody>
     </table>
     <tr id="no-rows" class="no-rows">
-      <td colspan="5" style="text-align:center;padding:32px;color:#4a5568;">No matching records found.</td>
+      <td colspan="5" style="text-align:center;padding:32px;color:#6b7280;">No matching records found.</td>
     </tr>
     {% else %}
     <div class="empty-state">
       <div class="icon">📭</div>
-      <p>No SMS queries yet. Send a message to your Africa's Talking number to get started.</p>
+      <p>No SMS queries yet. Messages sent to your gateway will appear here automatically.</p>
     </div>
     {% endif %}
   </div>
 </div>
 
 <script>
-  function filterTest() {
-    // placeholder
-  }
   function filterTable() {
     const val = document.getElementById("search").value.toLowerCase();
     const rows = document.querySelectorAll("#table-body tr");
