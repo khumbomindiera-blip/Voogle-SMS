@@ -31,7 +31,11 @@ def init_db():
     pass
 
 
-def save_query(phone_number, user_query, gemini_response, timestamp):
+def save_query(phone_number, user_query, gemini_response, timestamp, channel="sms"):
+    """
+    Saves an inbound query and response to Supabase.
+    Channel can be 'sms' or 'voice'.
+    """
     try:
         response = (
             supabase
@@ -40,7 +44,8 @@ def save_query(phone_number, user_query, gemini_response, timestamp):
                 "phone_number": phone_number,
                 "user_query": user_query,
                 "gemini_response": gemini_response,
-                "timestamp": timestamp
+                "timestamp": timestamp,
+                "channel": channel
             })
             .execute()
         )
