@@ -2,7 +2,8 @@ import os
 import logging
 import datetime
 import requests
-from flask import Flask, request, render_template, jsonify
+import re
+from flask import Flask, request, render_template, jsonify, Response
 import google.generativeai as genai
 from duckduckgo_search import DDGS
 import africastalking
@@ -81,6 +82,7 @@ def search_web(query: str, max_results: int = 4) -> str:
         log.warning("Web search failed: %s", e)
         return ""
 
+
 DISTRICTS = {
     "blantyre": (-15.7861, 35.0058),
     "lilongwe": (-13.9833, 33.7833),
@@ -102,8 +104,9 @@ DISTRICTS = {
     "nkhatabay": (-11.6000, 34.3000),
     "likoma": (-12.0500, 34.7333)
 }
-def get_weather(location="blantyre"):
 
+
+def get_weather(location="blantyre"):
     location = location.lower().strip()
 
     if location not in DISTRICTS:
@@ -112,7 +115,6 @@ def get_weather(location="blantyre"):
     lat, lon = DISTRICTS[location]
 
     try:
-
         url = (
             f"https://api.open-meteo.com/v1/forecast"
             f"?latitude={lat}"
@@ -121,9 +123,7 @@ def get_weather(location="blantyre"):
         )
 
         r = requests.get(url, timeout=10)
-
         data = r.json()
-
         current = data["current"]
 
         temp = current.get("temperature_2m", "N/A")
@@ -140,32 +140,21 @@ def get_weather(location="blantyre"):
     except Exception as e:
         return f"Weather service unavailable: {e}"
 
-def get_ai_response(message: str):
 
+def get_ai_response(message: str):
     if not model:
         return "Error: Gemini API key not configured."
 
     try:
-
         lower = message.lower()
 
         # Weather / climate questions
         weather_keywords = [
-            "weather",
-            "rain",
-            "temperature",
-            "flood",
-            "storm",
-            "heat",
-            "climate",
-            "forecast",
-            "mvula",
-            "kutentha",
-            "nyengo"
+            "weather", "rain", "temperature", "flood", "storm",
+            "heat", "climate", "forecast", "mvula", "kutentha", "nyengo"
         ]
 
         if any(word in lower for word in weather_keywords):
-
             district_found = "blantyre"
 
             for district in DISTRICTS.keys():
@@ -179,7 +168,6 @@ def get_ai_response(message: str):
 You are Voogle Climate AI for Malawi.
 
 Weather Data:
-
 {weather_data}
 
 User Question:
@@ -192,7 +180,6 @@ Rules:
 - Mention the district.
 - If flood risk cannot be determined, say so.
 """
-
             response = model.generate_content(prompt)
             return response.text.strip()
 
@@ -222,14 +209,11 @@ Rules:
     except Exception as e:
         return f"Error: {str(e)}"
 
+
 def send_sms(recipient: str, message: str) -> dict:
     """
     Send an SMS via SMSMobileAPI and return a result dict.
     """
-
-    import os
-    import requests
-
     sms_api_key = os.getenv("SMS_API_KEY", "").strip()
 
     if not sms_api_key:
@@ -245,14 +229,9 @@ def send_sms(recipient: str, message: str) -> dict:
         "message": message
     }
 
-    log.info(
-        "Sending SMS to %s (%s chars)",
-        recipient,
-        len(message)
-    )
+    log.info("Sending SMS to %s (%s chars)", recipient, len(message))
 
     try:
-
         response = requests.get(
             "https://api.smsmobileapi.com/sendsms/",
             params=payload,
@@ -260,33 +239,16 @@ def send_sms(recipient: str, message: str) -> dict:
         )
 
         response.raise_for_status()
-
         data = response.json()
 
-        log.info(
-            "SMSMobileAPI response: %s",
-            data
-        )
+        log.info("SMSMobileAPI response: %s", data)
 
         result = data.get("result", {})
+        error_code = str(result.get("error", "1"))
+        sent = str(result.get("sent", "0"))
+        status = result.get("note", result.get("sent", "Unknown"))
 
-        error_code = str(
-            result.get("error", "1")
-        )
-
-        sent = str(
-            result.get("sent", "0")
-        )
-
-        status = result.get(
-            "note",
-            result.get("sent", "Unknown")
-        )
-
-        success = (
-            error_code == "0"
-            and sent == "1"
-        )
+        success = (error_code == "0" and sent == "1")
 
         return {
             "success": success,
@@ -295,34 +257,24 @@ def send_sms(recipient: str, message: str) -> dict:
         }
 
     except Exception as e:
-
-        log.exception(
-            "SMSMobileAPI send failed"
-        )
-
+        log.exception("SMSMobileAPI send failed")
         return {
             "success": False,
             "status": "error",
             "error": str(e)
         }
 
+
+# ── Routes ────────────────────────────────────────────────────────────────────
+
 @app.route("/ask")
 def ask():
-
     text = request.args.get("text", "")
-
     return get_ai_response(text)
-# ── Routes ────────────────────────────────────────────────────────────────────
 
-import re
-import datetime
-from flask import jsonify
-
-# ── Routes ────────────────────────────────────────────────────────────────────
 
 @app.route("/sms", methods=["POST"])
 def receive_sms():
-
     data = request.get_json(silent=True) or {}
 
     log.info("RAW JSON: %s", data)
@@ -330,36 +282,20 @@ def receive_sms():
     sender = ""
     message_text = ""
 
-    # --------------------------------------------------
     # SMS Gateway API format
-    # --------------------------------------------------
     if "number" in data and "message" in data:
-
         sender = str(data.get("number", "")).strip()
         message_text = str(data.get("message", "")).strip()
 
-    # --------------------------------------------------
     # SMSMobileAPI webhook format
-    # --------------------------------------------------
     elif data.get("event") == "message.inbound":
-
         sms_data = data.get("data", {})
+        sender = str(sms_data.get("from", "")).strip()
+        message_text = str(sms_data.get("body", "")).strip()
 
-        sender = str(
-            sms_data.get("from", "")
-        ).strip()
-
-        message_text = str(
-            sms_data.get("body", "")
-        ).strip()
-
-    # --------------------------------------------------
     # Legacy SMS Forwarder format
-    # --------------------------------------------------
     else:
-
         raw_text = data.get("key", "")
-
         match = re.search(
             r"From\s*:\s*(\+?\d+).*?\n(.*)",
             raw_text,
@@ -367,55 +303,28 @@ def receive_sms():
         )
 
         if match:
-
             sender = match.group(1).strip()
             message_text = match.group(2).strip()
 
-    log.info(
-        "Inbound SMS — from=%s text=%r",
-        sender,
-        message_text
-    )
+    log.info("Inbound SMS — from=%s text=%r", sender, message_text)
 
     if not message_text:
-
         return jsonify({
             "reply": "Sorry, I could not read your message."
         }), 200
 
     try:
-
-        log.info(
-            "STEP 1: About to call Gemini"
-        )
-
-        ai_response = get_ai_response(
-            message_text
-        )
-
-        log.info(
-            "STEP 2: Gemini returned"
-        )
+        log.info("STEP 1: About to call Gemini")
+        ai_response = get_ai_response(message_text)
+        log.info("STEP 2: Gemini returned")
 
         if not ai_response:
+            ai_response = "Sorry, I could not generate a response right now."
 
-            ai_response = (
-                "Sorry, I could not generate a response right now."
-            )
+        log.info("AI Reply => %s", ai_response)
 
-        log.info(
-            "AI Reply => %s",
-            ai_response
-        )
-
-        # ----------------------------------------------
         # Save to database
-        # ----------------------------------------------
-        timestamp = datetime.datetime.now().isoformat(
-            sep=" ",
-            timespec="seconds"
-        )
-
+        timestamp = datetime.datetime.now().isoformat(sep=" ", timespec="seconds")
         save_query(
             phone_number=sender or "UNKNOWN",
             user_query=message_text,
@@ -423,24 +332,12 @@ def receive_sms():
             timestamp=timestamp,
         )
 
-        log.info(
-            "STEP 3: Saved query to database"
-        )
+        log.info("STEP 3: Saved query to database")
 
-        # ----------------------------------------------
         # Send SMS reply
-        # ----------------------------------------------
         if sender:
-
-            sms_result = send_sms(
-                recipient=sender,
-                message=ai_response
-            )
-
-            log.info(
-                "STEP 4: SMS send result => %s",
-                sms_result
-            )
+            sms_result = send_sms(recipient=sender, message=ai_response)
+            log.info("STEP 4: SMS send result => %s", sms_result)
 
         return jsonify({
             "status": "success",
@@ -448,14 +345,82 @@ def receive_sms():
         }), 200
 
     except Exception as e:
-
-        log.exception(
-            "SMS processing failed"
-        )
-
+        log.exception("SMS processing failed")
         return jsonify({
             "reply": f"System error: {str(e)}"
         }), 200
+
+
+# ── Voice / IVR Routes ────────────────────────────────────────────────────────
+
+@app.route("/voice/incoming", methods=["POST", "GET"])
+def voice_incoming():
+    """
+    Africa's Talking incoming call webhook.
+    Greets caller and prompts for voice recording.
+    """
+    caller = request.values.get("callerNumber", "Unknown")
+    session_id = request.values.get("sessionId", "")
+    log.info("Incoming call from %s (Session: %s)", caller, session_id)
+
+    xml_response = """<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Say voice="woman">Welcome to Voogle Voice Assistant. Please state your query after the beep.</Say>
+    <Record finishOnKey="#" maxLength="30" trimSilence="true" playBeep="true" callbackUrl="/voice/callback"/>
+</Response>"""
+    return Response(xml_response, mimetype="text/xml")
+
+
+@app.route("/voice/callback", methods=["POST", "GET"])
+def voice_callback():
+    """
+    Processes voice recording/transcription callback, calls Gemini API,
+    and returns a voice synthesis XML response.
+    """
+    caller = request.values.get("callerNumber", "Unknown")
+    user_query = (
+        request.values.get("TranscriptionText")
+        or request.values.get("dtmfDigits")
+        or request.values.get("recordingUrl", "")
+    )
+
+    log.info("Voice callback from %s with query/recording: %s", caller, user_query)
+
+    if not user_query:
+        reply_xml = """<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Say voice="woman">Sorry, we could not hear your request. Please try calling again.</Say>
+    <Reject/>
+</Response>"""
+        return Response(reply_xml, mimetype="text/xml")
+
+    # Pass the query to Gemini
+    ai_response = get_ai_response(user_query)
+
+    # Clean XML unsafe characters
+    clean_ai_response = ai_response.replace("&", "and").replace("<", "").replace(">", "")
+
+    # Save to database
+    try:
+        timestamp = datetime.datetime.now().isoformat(sep=" ", timespec="seconds")
+        save_query(
+            phone_number=caller,
+            user_query=f"[VOICE] {user_query}",
+            gemini_response=clean_ai_response,
+            timestamp=timestamp,
+        )
+    except Exception as db_err:
+        log.warning("Could not log voice query to DB: %s", db_err)
+
+    response_xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Say voice="woman">{clean_ai_response}</Say>
+</Response>"""
+    return Response(response_xml, mimetype="text/xml")
+
+
+# ── Dashboard & Debug Routes ──────────────────────────────────────────────────
+
 @app.route("/admin")
 def admin_dashboard():
     queries = get_all_queries()
@@ -467,6 +432,7 @@ def api_queries():
     queries = get_all_queries()
     return jsonify(queries)
 
+
 @app.route("/debug")
 def debug():
     return jsonify({
@@ -474,7 +440,7 @@ def debug():
         "gemini_key_preview": (
             GEMINI_API_KEY[:6] + "..."
         ) if GEMINI_API_KEY else None,
-        "model_name": "gemini-3.7-flash",
+        "model_name": "gemini-3.6-flash",
         "at_username": AT_USERNAME,
         "at_sender_id": AT_SENDER_ID,
         "at_api_key_exists": bool(AT_API_KEY),
@@ -503,10 +469,12 @@ def models():
 def index():
     return (
         "<h2>Voogle is running.</h2>"
-        "<p>Inbound webhook: <code>POST /sms</code></p>"
+        "<p>Inbound SMS webhook: <code>POST /sms</code></p>"
+        "<p>Inbound Voice webhook: <code>POST /voice/incoming</code></p>"
         "<p>Test outbound: <code>GET /testsms?to=+265XXXXXXXXX</code></p>"
         "<p><a href='/admin'>Admin Dashboard</a></p>"
     )
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
